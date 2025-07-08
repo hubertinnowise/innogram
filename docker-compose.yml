@@ -1,3 +1,5 @@
+version: '3.8'
+
 services:
   backend:
     build:
@@ -7,7 +9,8 @@ services:
     volumes:
       - ./backend:/app
       - /app/node_modules
-    command: npx nx serve ./backend --configuration=development
+    working_dir: /app
+    command: npx nx serve backend --configuration=development
 
   frontend:
     build:
@@ -17,6 +20,7 @@ services:
     volumes:
       - ./frontend:/app
       - /app/node_modules
-    command: npm run dev
+    working_dir: /app
+    command: npx nx serve frontend --configuration=development
     depends_on:
       - backend
