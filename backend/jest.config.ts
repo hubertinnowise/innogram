@@ -10,7 +10,7 @@ const swcJestConfig = JSON.parse(
 swcJestConfig.swcrc = false;
 
 export default {
-  displayName: '@./backend',
+  displayName: 'backend',
   preset: '../jest.preset.js',
   testEnvironment: 'node',
   transform: {

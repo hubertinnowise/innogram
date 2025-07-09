@@ -1,26 +1,26 @@
-version: '3.8'
+version: "3.9"
 
 services:
-  backend:
-    build:
-      context: ./backend
-    ports:
-      - "3001:3000"
-    volumes:
-      - ./backend:/app
-      - /app/node_modules
-    working_dir: /app
-    command: npx nx serve backend --configuration=development
-
   frontend:
     build:
-      context: ./frontend
+      context: .
+      dockerfile: frontend/Dockerfile
+    working_dir: /app
+    volumes:
+      - .:/app
+      - /app/node_modules
+    ports:
+      - "4200:4200"
+    command: npx nx serve frontend --configuration=development
+
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    working_dir: /app
+    volumes:
+      - .:/app
+      - /app/node_modules
     ports:
       - "3000:3000"
-    volumes:
-      - ./frontend:/app
-      - /app/node_modules
-    working_dir: /app
-    command: npx nx serve frontend --configuration=development
-    depends_on:
-      - backend
+    command: npx nx serve backend --configuration=development

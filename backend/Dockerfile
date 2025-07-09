@@ -1,6 +1,13 @@
 FROM node:20-alpine
+
 WORKDIR /app
+
 COPY package*.json ./
-RUN npm install
+COPY nx.json ./
+COPY tsconfig.base.json ./
 COPY . .
-CMD ["npx", "nx", "serve", "./backend", "--configuration=development"]
+
+RUN npm install
+
+CMD ["npx", "nx", "serve", "backend", "--configuration=development", "--skip-nx-cache"]
+

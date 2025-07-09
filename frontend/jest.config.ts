@@ -6,7 +6,7 @@ const createJestConfig = nextJest({
 });
 
 const config: Config = {
-  displayName: '@./frontend',
+  displayName: 'frontend',
   preset: '../jest.preset.js',
   transform: {
     '^(?!.*\\.(js|jsx|ts|tsx|css|json)$)': '@nx/react/plugins/jest',
