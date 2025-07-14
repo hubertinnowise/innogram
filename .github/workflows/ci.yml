@@ -1,0 +1,66 @@
+name: CI Pipeline
+
+on:
+  push:
+    branches: [main, dev]
+  pull_request:
+    branches: [main, dev]
+
+jobs:
+  install:
+    name: Install Dependencies
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+  lint:
+    name: Lint All Projects
+    runs-on: ubuntu-latest
+    needs: install
+    steps:
+      - uses: actions/checkout@v3
+      - run: npm ci
+      - run: npx nx run-many --target=lint --projects=frontend,backend
+
+  typecheck:
+    name: Type Check
+    runs-on: ubuntu-latest
+    needs: install
+    steps:
+      - uses: actions/checkout@v3
+      - run: npm ci
+      - run: npx tsc --noEmit
+
+  test:
+    name: Run Unit Tests
+    runs-on: ubuntu-latest
+    needs: install
+    steps:
+      - uses: actions/checkout@v3
+      - run: npm ci
+      - run: npx nx run-many --target=test --projects=frontend,backend --parallel
+
+  docker:
+    name: Docker Build Check
+    runs-on: ubuntu-latest
+    needs: install
+    steps:
+      - uses: actions/checkout@v3
+      - name: Build backend Dockerfile
+        run: docker build -t backend ./backend
+
+      - name: Build frontend Dockerfile
+        run: docker build -t frontend ./frontend
+
+      - name: Validate docker-compose
+        run: docker-compose config
