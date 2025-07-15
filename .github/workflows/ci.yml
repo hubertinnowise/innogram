@@ -15,7 +15,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
-      - run: npm install
+      - name: Install dependencies
+        run: npm install --verbose
       - name: Lint frontend
         run: npx nx lint frontend
       - name: Lint backend
@@ -29,7 +30,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
-      - run: npm install
+      - name: Install dependencies
+        run: npm install --verbose
       - name: Type check frontend
         run: npx tsc --noEmit --project frontend/tsconfig.json
       - name: Type check backend
@@ -43,7 +45,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
-      - run: npm install
+      - name: Install dependencies
+        run: npm install --verbose
       - name: Test frontend
         run: npx nx test frontend
       - name: Test backend
