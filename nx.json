@@ -68,6 +68,14 @@
       "dependsOn": ["^build"]
     }
   },
+  "tasksRunnerOptions": {
+    "default": {
+      "runner": "nx/tasks-runners/default",
+      "options": {
+        "cacheableOperations": ["build", "lint", "test", "typecheck"]
+      }
+    }
+  },
   "generators": {
     "@nx/next": {
       "application": {

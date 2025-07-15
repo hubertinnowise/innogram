@@ -6,6 +6,11 @@ on:
   pull_request:
     branches: [main, dev]
 
+env:
+  NX_CLOUD_DISTRIBUTED_EXECUTION: false
+  NX_SKIP_NX_CACHE: true
+  CI: true
+
 jobs:
   lint:
     name: Lint frontend and backend
@@ -15,8 +20,17 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
+      - name: Cache node modules
+        uses: actions/cache@v3
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
       - name: Install dependencies
-        run: npm install --verbose
+        run: |
+          npm ci --prefer-offline --no-audit --progress=false --timeout=300000
+          npx nx reset
       - name: Lint frontend
         run: npx nx lint frontend
       - name: Lint backend
@@ -30,8 +44,17 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
+      - name: Cache node modules
+        uses: actions/cache@v3
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
       - name: Install dependencies
-        run: npm install --verbose
+        run: |
+          npm ci --prefer-offline --no-audit --progress=false --timeout=300000
+          npx nx reset
       - name: Type check frontend
         run: npx tsc --noEmit --project frontend/tsconfig.json
       - name: Type check backend
@@ -45,8 +68,17 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
+      - name: Cache node modules
+        uses: actions/cache@v3
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
       - name: Install dependencies
-        run: npm install --verbose
+        run: |
+          npm ci --prefer-offline --no-audit --progress=false --timeout=300000
+          npx nx reset
       - name: Test frontend
         run: npx nx test frontend
       - name: Test backend
