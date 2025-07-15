@@ -10,9 +10,6 @@ rm -rf .nx
 rm -rf dist
 
 echo "Installing dependencies..."
-npm ci --prefer-offline --no-audit --progress=false
-
-echo "Resetting NX cache..."
-npx nx reset
+npm ci --no-audit --progress=false
 
 echo "Clean install completed!" 
