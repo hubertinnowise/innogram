@@ -1,0 +1,8 @@
+name: Deploy api
+description: Deploy api
+
+runs:
+  using: "composite"
+  steps:
+    - shell: bash
+      run: echo hello
