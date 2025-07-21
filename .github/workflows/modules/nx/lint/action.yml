@@ -1,0 +1,18 @@
+name: Lint NX
+description: Lint NX
+
+runs:
+  using: "composite"
+  steps:
+    - name: Setup node base
+      uses: ./.github/workflows/utils/setup-node
+
+    - name: Install dependencies
+      uses: ./.github/workflows/modules/nx/install-dependencies
+
+    - name: Get nx env
+      uses: ./.github/workflows/utils/get-nx-env
+
+    - name: Lint
+      shell: bash
+      run: pnpm check:all

@@ -1,0 +1,8 @@
+name: Deploy web
+description: Deploy web
+
+runs:
+  using: "composite"
+  steps:
+    - shell: bash
+      run: echo hello

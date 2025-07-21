@@ -1,0 +1,89 @@
+name: prod
+
+on:
+  push:
+    branches:
+      - "main"
+
+permissions:
+  contents: write
+  actions: read
+  checks: read
+  pull-requests: read
+  statuses: read
+
+jobs:
+  linting:
+    name: "Linting ${{ matrix.config.name }}"
+    runs-on: ${{ matrix.config.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        config:
+          - { name: "Ubuntu", os: "ubuntu-latest" }
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Env
+        uses: ./.github/workflows/utils/json-to-env
+        with:
+          json: ${{ toJSON(matrix.config) }}
+
+      - name: NX
+        uses: ./.github/workflows/modules/nx/lint
+
+      - name: Linting commit
+        uses: ./.github/workflows/utils/commit
+        with:
+          message: "Linting fixes"
+
+  building:
+    name: "Build: ${{ matrix.config.name }}"
+    runs-on: ${{ matrix.config.os }}
+    needs:
+      - linting
+    strategy:
+      fail-fast: false
+      matrix:
+        config:
+          - { name: "Ubuntu", os: "ubuntu-latest" }
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Env
+        uses: ./.github/workflows/utils/json-to-env
+        with:
+          json: ${{ toJSON(matrix.config) }}
+
+      - name: NX
+        uses: ./.github/workflows/modules/nx/build
+
+  deploying:
+    name: "Deploy"
+    runs-on: ${{ matrix.config.os }}
+    needs:
+      - building
+    strategy:
+      fail-fast: false
+      matrix:
+        config:
+          - { name: "Ubuntu", os: "ubuntu-latest" }
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Deploy web
+        if: ${{ env.affectedApps }} && contains(env.affectedApps, 'web')
+        uses: ./.github/workflows/modules/nx/web-deploy
+
+      - name: Deploy api
+        if: ${{ env.affectedApps }} && contains(env.affectedApps, 'api')
+        uses: ./.github/workflows/modules/nx/api-deploy

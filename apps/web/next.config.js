@@ -1,0 +1,18 @@
+const { composePlugins, withNx } = require("@nx/next");
+
+/**
+ * @type {import('@nx/next/plugins/with-nx').WithNxOptions}
+ **/
+const nextConfig = {
+  experimental: {
+    typedRoutes: true,
+  },
+  nx: {
+    svgr: false,
+  },
+  reactStrictMode: true,
+};
+
+const plugins = [withNx];
+
+module.exports = composePlugins(...plugins)(nextConfig);
