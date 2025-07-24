@@ -4,6 +4,6 @@ import { ConfigModule } from '../config/config.module';
 import { AuthModule } from './auth/auth.module';
 
 @Module({
-  imports: [ConfigModule, AuthModule],
+    imports: [ConfigModule, AuthModule],
 })
 export class AppModule {}

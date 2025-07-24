@@ -5,25 +5,25 @@ import { AuthService } from './auth.service';
 
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+    constructor(private readonly authService: AuthService) {}
 
-  @Post('login')
-  login(@Body() body: LoginDto) {
-    return this.authService.login(body);
-  }
+    @Post('login')
+    login(@Body() body: LoginDto) {
+        return this.authService.login(body);
+    }
 
-  @Post('logout')
-  logout(@Body() body: RefreshDto) {
-    return this.authService.logout(body.refreshToken);
-  }
+    @Post('logout')
+    logout(@Body() body: RefreshDto) {
+        return this.authService.logout(body.refreshToken);
+    }
 
-  @Post('refresh')
-  refresh(@Body() body: RefreshDto) {
-    return this.authService.refresh(body.refreshToken);
-  }
+    @Post('refresh')
+    refresh(@Body() body: RefreshDto) {
+        return this.authService.refresh(body.refreshToken);
+    }
 
-  @Post('register')
-  register(@Body() body: RegisterDto) {
-    return this.authService.register(body);
-  }
+    @Post('register')
+    register(@Body() body: RegisterDto) {
+        return this.authService.register(body);
+    }
 }
