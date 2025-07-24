@@ -1,5 +1,5 @@
-"use client";
+'use client';
 
-import { Root } from "@radix-ui/react-accordion";
+import { Root } from '@radix-ui/react-accordion';
 
 export const Accordion = Root;

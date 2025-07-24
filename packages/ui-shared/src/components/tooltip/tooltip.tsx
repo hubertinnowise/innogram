@@ -1,5 +1,5 @@
-"use client";
+'use client';
 
-import { Root } from "@radix-ui/react-tooltip";
+import { Root } from '@radix-ui/react-tooltip';
 
 export const Tooltip = Root;
