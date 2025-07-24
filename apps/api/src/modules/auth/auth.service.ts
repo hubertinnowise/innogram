@@ -6,8 +6,8 @@ import { LoginDto, RegisterDto } from './auth.dto';
 
 @Injectable()
 export class AuthService {
-    private JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET;
-    private JWT_SECRET = process.env.JWT_SECRET;
+    // private JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET;
+    // private JWT_SECRET = process.env.JWT_SECRET;
 
     private generateAccessToken(payload: { userId: string }): string {
         return jwt.sign(
@@ -25,7 +25,7 @@ export class AuthService {
         );
     }
 
-    async login(data: LoginDto) {
+    async login(_data: LoginDto) {
         const userId = uuidv4(); // replace with real DB user ID later
 
         const accessToken = this.generateAccessToken({ userId });
@@ -43,7 +43,11 @@ export class AuthService {
     }
 
     async refresh(refreshToken: string) {
-        const decoded = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET!) as jwt.JwtPayload;
+        const jwtRefreshSecret = process.env.JWT_REFRESH_SECRET;
+        if (!jwtRefreshSecret) {
+            throw new Error('JWT_REFRESH_SECRET is not set');
+        }
+        const decoded = jwt.verify(refreshToken, jwtRefreshSecret) as jwt.JwtPayload;
 
         if (!decoded || typeof decoded !== 'object' || !decoded.userId) {
             throw new Error('Invalid refresh token');

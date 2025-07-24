@@ -3,6 +3,9 @@
     "pluginsConfig": {
         "@nx/js": {
             "analyzeSourceFiles": true
+        },
+        "@nx/nest": {
+            "analyzeSourceFiles": true
         }
     },
     "targetDefaults": {
