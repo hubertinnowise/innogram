@@ -31,10 +31,6 @@ jobs:
               uses: ./.github/workflows/utils/json-to-env
               with:
                   json: ${{ toJSON(matrix.config) }}
-            - name: Print Node.js version
-              run: node --version
-            - name: Print pnpm version
-              run: pnpm --version
             - name: NX
               uses: ./.github/workflows/modules/nx/lint
             - name: Linting commit
