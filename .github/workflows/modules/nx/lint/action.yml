@@ -15,7 +15,4 @@ runs:
 
         - name: Lint
           shell: bash
-          run: |
-              pnpm nx format:check --verbose
-              pnpm nx run-many --all --target=lint --verbose
-              pnpm nx run-many --all --target=build --noEmitOnError --verbose
+          run: pnpm check:all
