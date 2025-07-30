@@ -2,6 +2,8 @@ import { Injectable } from '@nestjs/common';
 import * as jwt from 'jsonwebtoken';
 import { v4 as uuidv4 } from 'uuid';
 
+import { PrismaService } from './prisma/prisma.service';
+
 import {
     LoginDto,
     RegisterDto,
@@ -13,6 +15,9 @@ import {
 
 @Injectable()
 export class AuthService {
+    //PrismaService injection to use it
+    constructor(private readonly prisma: PrismaService) {}
+
     private generateAccessToken(payload: { userId: string }): string {
         return jwt.sign(payload, process.env.JWT_SECRET || 'dev-secret', {
             expiresIn: '15m',
