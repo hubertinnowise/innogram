@@ -28,6 +28,6 @@
         "apps/**/ecosystem.config.js",
         "apps/**/webpack.config.js",
         "apps/**/next.config.js",
-        "apps/**/postcss.config.js"
+        "apps/**/postcss.config.js",
     ]
 }
