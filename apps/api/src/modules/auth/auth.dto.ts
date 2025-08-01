@@ -1,12 +1,24 @@
-import { IsEmail, IsString, MinLength } from 'class-validator';
+import {
+  IsEmail,
+  IsPhoneNumber,
+  IsString,
+  IsUUID,
+  MinLength,
+} from 'class-validator';
 
 export class RegisterDto {
   @IsEmail()
   email!: string;
 
   @IsString()
-  @MinLength(8)
+  @MinLength(6)
   password!: string;
+
+  @IsPhoneNumber()
+  phoneNumber!: string;
+
+  @IsString()
+  username!: string;
 }
 
 export class LoginDto {
@@ -29,23 +41,23 @@ export class ForgotPasswordDto {
 
 export class ResetPasswordDto {
   @IsString()
-  token!: string;
+  @MinLength(6)
+  newPassword!: string;
 
   @IsString()
-  @MinLength(8)
-  newPassword!: string;
+  token!: string;
 }
 
 export class ChangePasswordDto {
   @IsString()
-  userId!: string;
+  @MinLength(6)
+  newPassword!: string;
 
   @IsString()
   oldPassword!: string;
 
-  @IsString()
-  @MinLength(8)
-  newPassword!: string;
+  @IsUUID()
+  userId!: string;
 }
 
 export class VerifyEmailDto {
