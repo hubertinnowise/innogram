@@ -4,6 +4,8 @@ import cookieParser from 'cookie-parser';
 import * as dotenv from 'dotenv';
 dotenv.config();
 
+import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+
 import { ConfigService } from './config/config.service';
 import { AppModule } from './modules/app.module';
 
@@ -28,7 +30,21 @@ async function bootstrap() {
     const globalPrefix = 'api';
     app.setGlobalPrefix(globalPrefix);
 
-    await app.listen(port, () => Logger.log(`Application is running on: http://localhost:${port}/${globalPrefix}`));
+    const swaggerConfig = new DocumentBuilder()
+        .setTitle('Innogram API')
+        .setDescription('API documentation for the Innogram backend')
+        .setVersion('1.0')
+        .addBearerAuth() 
+        .build();
+
+    const document = SwaggerModule.createDocument(app, swaggerConfig);
+    SwaggerModule.setup(`${globalPrefix}/docs`, app, document);
+
+    await app.listen(port, () =>
+        Logger.log(`Application is running on: http://localhost:${port}/${globalPrefix}`),
+    );
+
+    Logger.log(`Swagger docs available at: http://localhost:${port}/${globalPrefix}/docs`);
 }
 
 bootstrap();
