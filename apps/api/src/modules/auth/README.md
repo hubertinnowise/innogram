@@ -1,1 +1,0 @@
-ze trzeba dodac class-validator dla dtosow chyba

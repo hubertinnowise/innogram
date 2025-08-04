@@ -1,15 +1,15 @@
-import { Body, Controller, Post } from '@nestjs/common';
+import { Body, Controller, HttpCode, Post } from '@nestjs/common';
 
-import {
-    ChangePasswordDto,
-    ForgotPasswordDto,
-    LoginDto,
-    RefreshDto,
-    RegisterDto,
-    ResetPasswordDto,
-    VerifyEmailDto
-} from './auth.dto';
 import { AuthService } from './auth.service';
+import {
+  ChangePasswordDto,
+  ForgotPasswordDto,
+  LoginDto,
+  RefreshDto,
+  RegisterDto,
+  ResetPasswordDto,
+  VerifyEmailDto,
+} from './dto';
 
 @Controller('auth')
 export class AuthController {

@@ -9,6 +9,8 @@ import * as bcrypt from 'bcrypt';
 import { addMinutes } from 'date-fns';
 import { v4 as uuidv4 } from 'uuid';
 
+import { Prisma } from '../../../prisma/generated/client';
+import { PrismaService } from '../../../prisma/prisma.service';
 import {
   ChangePasswordDto,
   ForgotPasswordDto,
@@ -17,9 +19,7 @@ import {
   RegisterDto,
   ResetPasswordDto,
   VerifyEmailDto,
-} from './auth.dto';
-import { Prisma } from './prisma/generated/client';
-import { PrismaService } from './prisma/prisma.service';
+} from './dto';
 
 @Injectable()
 export class AuthService {
@@ -56,14 +56,13 @@ export class AuthService {
     return { message: 'Password changed' };
   }
 
-
   async forgotPassword(email: string) {
     const user = await this.prisma.user.findUnique({ where: { email } });
     if (!user) throw new NotFoundException('User not found');
 
     const token = uuidv4();
     
-    //TODO 
+    // TODO SEND EMAIL IN PROD
     // await this.prisma.user.update({
     //   data: {
     //     passwordResetExpires: addMinutes(new Date(), 30),
@@ -71,9 +70,6 @@ export class AuthService {
     //   },
     //   where: { email },
     // });
-
-
-    // SEND EMAIL 
 
     return { message: 'Password reset token generated', token };
   }
@@ -167,7 +163,7 @@ export class AuthService {
       where: { email },
     });
 
-    // EMAIL RESEND
+    // TODO SEND EMAIL IN PROD
 
     return { message: 'Verification email re-sent', token }; 
   }
