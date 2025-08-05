@@ -49,3 +49,6 @@ Thumbs.db
 
 # history
 .history
+
+# prisma generated
+apps/api/prisma/generated/
