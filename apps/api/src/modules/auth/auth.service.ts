@@ -6,13 +6,13 @@ import { addMinutes } from 'date-fns';
 import { v4 as uuidv4 } from 'uuid';
 
 import { Prisma } from '../../../prisma/generated/client';
-import { PrismaService } from '../../../prisma/prisma.service';
+import { DatabaseService } from '../../core/database/database.service';
 import { LoginDto, RegisterDto } from './dto';
 
 @Injectable()
 export class AuthService {
     constructor(
-        private readonly prisma: PrismaService,
+        private readonly prisma: DatabaseService,
         private readonly jwt: JwtService,
         @Inject('RABBITMQ_CLIENT') private readonly rabbitClient: ClientProxy,
     ) {}
