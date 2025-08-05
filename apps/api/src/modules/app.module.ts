@@ -6,7 +6,7 @@ import { AuthModule } from './auth/auth.module';
 
 @Module({
     imports: [
-        ConfigModule, 
+        ConfigModule,
         AuthModule,
         ClientsModule.register([
             {
@@ -18,7 +18,7 @@ import { AuthModule } from './auth/auth.module';
                     },
                     urls: ['amqp://guest:guest@rabbitmq:5672'],
                 },
-                transport: Transport.RMQ
+                transport: Transport.RMQ,
             },
         ]),
     ],

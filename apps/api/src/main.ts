@@ -34,15 +34,13 @@ async function bootstrap() {
         .setTitle('Innogram API')
         .setDescription('API documentation for the Innogram backend')
         .setVersion('1.0')
-        .addBearerAuth() 
+        .addBearerAuth()
         .build();
 
     const document = SwaggerModule.createDocument(app, swaggerConfig);
     SwaggerModule.setup(`${globalPrefix}/docs`, app, document);
 
-    await app.listen(port, () =>
-        Logger.log(`Application is running on: http://localhost:${port}/${globalPrefix}`),
-    );
+    await app.listen(port, () => Logger.log(`Application is running on: http://localhost:${port}/${globalPrefix}`));
 
     Logger.log(`Swagger docs available at: http://localhost:${port}/${globalPrefix}/docs`);
 }
