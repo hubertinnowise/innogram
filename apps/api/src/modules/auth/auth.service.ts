@@ -1,10 +1,12 @@
 import {
   BadRequestException,
+  Inject,
   Injectable,
   NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
+import { ClientProxy } from '@nestjs/microservices';
 import * as bcrypt from 'bcrypt';
 import { addMinutes } from 'date-fns';
 import { v4 as uuidv4 } from 'uuid';
@@ -21,9 +23,14 @@ import {
   VerifyEmailDto,
 } from './dto';
 
+
 @Injectable()
 export class AuthService {
-  constructor(private prisma: PrismaService, private jwt: JwtService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly jwt: JwtService,
+    @Inject('RABBITMQ_CLIENT') private readonly rabbitClient: ClientProxy,
+  ) {}
 
   private async compare(password: string, hash: string): Promise<boolean> {
     return await bcrypt.compare(password, hash);
@@ -136,6 +143,13 @@ export class AuthService {
         username: dto.username,
       },
     });
+
+    // rabbit email service
+    // this.rabbitClient.emit('user_registered', {
+    //   email: user.email,
+    //   name: user.username,
+    //   verificationToken: user.emailVerificationToken,
+    // });
 
     const tokens = this.generateTokens(user.id);
     await this.prisma.token.create({
