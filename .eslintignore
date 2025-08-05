@@ -1,1 +1,3 @@
 node_modules
+apps/api/prisma/generated
+apps/api/prisma/migrations
