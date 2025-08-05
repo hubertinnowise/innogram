@@ -2,13 +2,13 @@ import { Body, Controller, Post } from '@nestjs/common';
 
 import { AuthService } from './auth.service';
 import {
-  ChangePasswordDto,
-  ForgotPasswordDto,
-  LoginDto,
-  RefreshDto,
-  RegisterDto,
-  ResetPasswordDto,
-  VerifyEmailDto,
+    ChangePasswordDto,
+    ForgotPasswordDto,
+    LoginDto,
+    RefreshDto,
+    RegisterDto,
+    ResetPasswordDto,
+    VerifyEmailDto,
 } from './dto';
 
 @Controller('auth')
