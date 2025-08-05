@@ -1,12 +1,16 @@
 import { Module } from '@nestjs/common';
+import { ConfigModule } from '@nestjs/config';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 
-import { ConfigModule } from '../config/config.module';
+import { CoreModule } from '../core/core.module';
 import { AuthModule } from './auth/auth.module';
 
 @Module({
     imports: [
-        ConfigModule,
+        ConfigModule.forRoot({
+			expandVariables: true,
+			isGlobal: true,
+		}),
         AuthModule,
         ClientsModule.register([
             {
@@ -21,6 +25,7 @@ import { AuthModule } from './auth/auth.module';
                 transport: Transport.RMQ,
             },
         ]),
+        CoreModule
     ],
 })
 export class AppModule {}
