@@ -14,13 +14,8 @@ import { v4 as uuidv4 } from 'uuid';
 import { Prisma } from '../../../prisma/generated/client';
 import { PrismaService } from '../../../prisma/prisma.service';
 import {
-  ChangePasswordDto,
-  ForgotPasswordDto,
   LoginDto,
-  RefreshDto,
   RegisterDto,
-  ResetPasswordDto,
-  VerifyEmailDto,
 } from './dto';
 
 
