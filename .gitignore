@@ -51,4 +51,5 @@ Thumbs.db
 .history
 
 # prisma generated
-apps/api/prisma/generated/
+./apps/api/prisma/generated/
+./apps/api/prisma/migrations/
