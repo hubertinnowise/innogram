@@ -1,26 +1,33 @@
 services:
-  postgres:
-    image: postgres
-    ports:
-      - 5454:5432
-    volumes:
-      - pgdata:/var/lib/postgresql/data
-    environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: db
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d db"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 10s
-    deploy:
-      resources:
-        limits:
-          cpus: "1"
-          memory: 4G
+    postgres:
+        image: postgres
+        ports:
+            - 5454:5432
+        volumes:
+            - pgdata:/var/lib/postgresql/data
+        environment:
+            POSTGRES_USER: postgres
+            POSTGRES_PASSWORD: postgres
+            POSTGRES_DB: db
+        healthcheck:
+            test: ['CMD-SHELL', 'pg_isready -U postgres -d db']
+            interval: 10s
+            timeout: 5s
+            retries: 5
+            start_period: 10s
+        deploy:
+            resources:
+                limits:
+                    cpus: '1'
+                    memory: 4G
+    rabbitmq:
+        image: rabbitmq:3-management
+        ports:
+            - '5672:5672'
+            - '15672:15672'
+        environment:
+            RABBITMQ_DEFAULT_USER: guest
+            RABBITMQ_DEFAULT_PASS: guest
 
 volumes:
-  pgdata:
-
+    pgdata:

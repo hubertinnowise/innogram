@@ -2,8 +2,8 @@ name: Install dependencies NX
 description: Install dependencies NX
 
 runs:
-  using: "composite"
-  steps:
-    - name: Install dependencies
-      shell: bash
-      run: pnpm install
+    using: 'composite'
+    steps:
+        - name: Install dependencies
+          shell: bash
+          run: pnpm install

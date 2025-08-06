@@ -1,8 +1,8 @@
 export enum ThemeColors {
-  WHITE_1000 = "white-1000",
+    WHITE_1000 = 'white-1000',
 }
 
 export enum FontSizes {
-  BODY_S = ".text-bodyS",
-  HEADLINE_S = ".text-headlineS",
+    BODY_S = '.text-bodyS',
+    HEADLINE_S = '.text-headlineS',
 }
