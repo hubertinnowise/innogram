@@ -1,12 +1,32 @@
-import { Injectable } from "@nestjs/common";
+import { Injectable, NotFoundException } from "@nestjs/common";
+import { DatabaseService } from "../../core/database/database.service";
+import { UserDetailsDto } from "./dto";
 
 @Injectable()
 export class UserService {
-    constructor() {}
+    constructor(
+        private readonly prisma: DatabaseService
+    ) {}
 
-    async userDetails() {
-        return;
+    async userDetails(userId: string): Promise<UserDetailsDto> {
+        const user = await this.prisma.user.findUnique({
+            where: { id: userId },
+            select: {
+            id: true,
+            email: true,
+            username: true,
+            phoneNumber: true,
+            createdAt: true,
+            },
+        });
+        
+        if (!user) {
+            throw new NotFoundException('User not found');
+        }
+        
+        return user as UserDetailsDto;
     }
+      
 
     async editUserDetails() {
         return;
