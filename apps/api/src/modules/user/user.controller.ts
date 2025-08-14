@@ -16,8 +16,8 @@ export class UserController {
 
     // GET /users/:id
     @Get(':id')
-    async getUserDetails(@Param('id', ParseIntPipe) id: number) {
-        return this.userService.userDetails();
+    async getUserDetails(@Param('id') id: string) {
+        return this.userService.userDetails(id);
     }
 
     // PATCH /users/:id
