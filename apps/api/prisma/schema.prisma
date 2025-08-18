@@ -8,6 +8,11 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum UserRole {
+  REGULAR
+  ADMIN
+}
+
 model User {
   id           String   @id @default(uuid())
   email        String   @unique
@@ -15,6 +20,11 @@ model User {
   passwordHash String
   phoneNumber  String   @unique
   createdAt    DateTime @default(now())
+
+  role         UserRole @default(REGULAR)
+
+  followers  UserFollow[] @relation("followers")
+  following  UserFollow[] @relation("following")
 
   sessions     Session[]
   tokens       Token[]
@@ -24,6 +34,19 @@ model User {
 
   emailVerificationToken   String?
   emailVerificationExpires DateTime?
+}
+
+model UserFollow {
+  followerId  String
+  followingId String
+  createdAt   DateTime @default(now())
+
+  follower  User @relation("following", fields: [followerId], references: [id], onDelete: Cascade)
+  following User @relation("followers", fields: [followingId], references: [id], onDelete: Cascade)
+
+  @@id([followerId, followingId])
+  @@index([followerId])
+  @@index([followingId])
 }
 
 model Session {
