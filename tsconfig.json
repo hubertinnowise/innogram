@@ -23,5 +23,5 @@
         "noFallthroughCasesInSwitch": true
     },
     "extends": "./tsconfig.base.json",
-    "exclude": ["apps/api/prisma/generated"]
+    "exclude": ["apps/*/prisma/"]
 }
