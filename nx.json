@@ -30,7 +30,11 @@
             "default",
             "!{projectRoot}/**/?(*.)+(spec|test).[jt]s?(x)?(.snap)",
             "!{projectRoot}/.eslintrc.json",
-            "!{projectRoot}/eslint.config.js"
+            "!{projectRoot}/eslint.config.js",
+            "!{projectRoot}/tsconfig.spec.json",
+            "!{projectRoot}/jest.config.[jt]s",
+            "!{projectRoot}/src/test-setup.[jt]s",
+            "!{projectRoot}/test-setup.[jt]s"
         ],
         "sharedGlobals": []
     },
@@ -47,5 +51,35 @@
                 "linter": "eslint"
             }
         }
-    }
+    },
+    "plugins": [
+        {
+            "plugin": "@nx/webpack/plugin",
+            "options": {
+                "buildTargetName": "webpack:build",
+                "serveTargetName": "webpack:serve",
+                "previewTargetName": "preview",
+                "serveStaticTargetName": "serve-static"
+            }
+        },
+        {
+            "plugin": "@nx/eslint/plugin",
+            "options": {
+                "targetName": "eslint:lint",
+                "extensions": ["ts", "tsx", "js", "jsx", "html", "vue"]
+            }
+        },
+        {
+            "plugin": "@nx/jest/plugin",
+            "options": {
+                "targetName": "test"
+            },
+            "exclude": [
+                "apps/myapp/my-app-e2e/**/*",
+                "apps/api-user/api-user-e2e/**/*",
+                "apps/api-user-e2e/**/*",
+                "apps/api-auth-e2e/**/*"
+            ]
+        }
+    ]
 }

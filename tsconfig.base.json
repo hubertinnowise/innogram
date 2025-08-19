@@ -16,6 +16,7 @@
         "allowUnreachableCode": true,
         "baseUrl": ".",
         "paths": {
+            "@innogram/*": ["apps/*"],
             "@/shared/*": ["./packages/shared/src/*"],
             "@/tailwind": ["./packages/tailwind/src/index.ts"],
             "@/tailwind-config": ["./packages/tailwind/src/tailwind.config.ts"],
