@@ -1,7 +1,8 @@
 generator client {
   provider = "prisma-client-js"
 }
-//ze teraz klient jest generowany do node modules w roocie, i z tego korzysta databaseservice!
+
+//ze teraz klient jest generowany do node modules @prisma w roocie, i z tego korzysta databaseservice!
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
@@ -25,8 +26,7 @@ model UserBlock {
   @@index([blockerId])
   @@index([blockedId])
 }
- 
- 
+
 model User {
   id           String   @id @default(uuid())
   email        String   @unique
@@ -39,7 +39,7 @@ model User {
   role UserRole @default(REGULAR)
   @@index([role])
  
-  bio          String?  @db.VarChar(500) // optional, max 500 chars
+  bio          String?  @db.VarChar(500)
  
   isBanned     Boolean   @default(false)
   bannedOn     DateTime?
@@ -48,6 +48,8 @@ model User {
   bannedById   String?       // FK column required for relation
   bannedBy     User?     @relation("BansIssued", fields: [bannedById], references: [id], onDelete: SetNull)
   bansIssued   User[]    @relation("BansIssued") // admins -> users they banned
+  @@index([isBanned])
+  @@index([bannedUntil])
  
   sessions     Session[]
   tokens       Token[]
@@ -62,9 +64,6 @@ model User {
  
   blocksInitiated  UserBlock[] @relation("BlocksInitiated")
   blocksReceived   UserBlock[] @relation("BlocksReceived")
- 
-  @@index([isBanned])
-  @@index([bannedUntil])
 }
  
 model Follow {

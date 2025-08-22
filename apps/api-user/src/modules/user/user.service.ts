@@ -1,13 +1,15 @@
-import { BadRequestException, ConflictException, Injectable, NotFoundException } from "@nestjs/common";
+import { BadRequestException, ConflictException, Inject, Injectable, NotFoundException } from "@nestjs/common";
 
 import { DatabaseService } from "../../core/database/database.service";
 import { UserDetailsDto } from "./dto";
 import { UpdateUserDto } from "./dto";
+import { ClientProxy } from "@nestjs/microservices";
  
 @Injectable()
 export class UserService {
     constructor(
-        private readonly prisma: DatabaseService
+        private readonly prisma: DatabaseService,
+        @Inject('RABBITMQ_CLIENT') private readonly client: ClientProxy
     ) {}
  
     // TODO: tylko dla admina, BanUserDTO
@@ -66,10 +68,34 @@ export class UserService {
       }
     }
  
-    //wszystkie usery, paginated, albo nwm, fixed ilosc jakas
-    // eslint-disable-next-line @typescript-eslint/no-empty-function
-    async findAll() {
- 
+    async findAll(): Promise<UserDetailsDto[]> {
+      const users = await this.prisma.user.findMany({
+        orderBy: { createdAt: 'desc' },
+        select: {
+          id: true,
+          email: true,
+          username: true,
+          bio: true,
+          createdAt: true,
+          _count: {
+            select: {
+              followers: true, // "Followers" relation
+              following: true, // "Following" relation 
+            },
+          },
+        },
+      });
+  
+      // map -> DTO
+      return users.map((u) => ({
+        id: u.id,
+        email: u.email,
+        username: u.username,
+        bio: u.bio ?? undefined,
+        createdAt: u.createdAt,
+        followersCount: u._count.followers,
+        followingCount: u._count.following,
+      }));
     }
  
     async followUser(followerId: string, followingId: string) {
@@ -237,6 +263,7 @@ export class UserService {
     // TODO: tylko dla admina, UnbanUserDTO
     // eslint-disable-next-line @typescript-eslint/no-empty-function
     async unbanUser() {
+        
     }
  
     //pomiedzy userami 
