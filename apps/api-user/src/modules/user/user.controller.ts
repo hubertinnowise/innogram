@@ -4,99 +4,138 @@ import {
     Controller, 
     Delete, 
     Get, 
-    Param, 
-    ParseIntPipe, 
+    HttpCode, 
+    Param,
     Patch, 
-    Post
+    Post,
+    Query
   } from '@nestjs/common';
-import { ApiBadRequestResponse, ApiNotFoundResponse, ApiOkResponse, ApiOperation, ApiParam } from '@nestjs/swagger';
-
+ 
+import { UpdateUserDto } from './dto';
 import { UserService } from './user.service';
-
+ 
 @Controller('users')
 export class UserController {
     constructor(private readonly userService: UserService) {}
-
-    // POST /users/:id/ban — to be implemented for admin
-    @Post(':id/ban')
-    async banUser(@Param('id') id: string) {
-        return await this.userService.banUser();
+ 
+    @Post(':id/block')
+    async blockUser(@Param('id') targetUserId: string /*, @Req() req */) {
+      // TODO: replace with your auth user id, e.g. req.user.id or @CurrentUser()
+      const meId = 'REPLACE_ME';
+ 
+      return this.userService.blockUser(meId, targetUserId);
     }
-
-    // tutaj tez trzeba sprawdzac identity, tylko user moze zmieniac swoje
-    // dane, no i pewnie admin moze sprawdzac wszystkich
-    // PATCH /users/:id
-    // @Patch(':id')
-    // @ApiOperation({ summary: 'Partially update user details' })
-    // @ApiParam({
-    //     name: 'id',
-    //     description: 'User UUID',
-    //     example: 'c7638a2d-bf5e-4f8a-aeb3-631b13a27a97',
-    // })
-    // @ApiOkResponse({ description: 'User updated' })
-    // @ApiBadRequestResponse({ description: 'Invalid params/body' })
-    // @ApiNotFoundResponse({ description: 'User not found' })
-    // @UsePipes(new NonEmptyBodyPipe())
-    // async editUserDetails(
-    //     @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
-    //     @Body() dto: UpdateUserDto,
-    // ) {
-    //     return this.usersService.editUserDetails(id, dto);
-    // }
-    // }
-
-    // DELETE /users/:id
-    @Delete(':id')
-    async deleteUser(@Param('id') id: string) {
-        // walidacja callera, tylko uzytkownik moze usunac samego siebie
-        // przekazywac usera wolajacego i id uzytkownika do usuniecia,
-        // albo id - id
-        
-        return this.userService.deleteUser(id);
-    }
-
-    // POST /users/:id/follow
-    // tez dostepne dla usera, kto kogo, moze dto nawet
+ 
     @Post(':id/follow')
-    async followUser(@Param('id', ParseIntPipe) id: number) {
-        //nie mozna followowac samego siebie
-        // return this.userService.followUser();
+    async followUser(@Param('id') targetUserId: string) {
+        const meId = 'REPLACE_ME';
+ 
+        if (meId === targetUserId) {
+            throw new BadRequestException('You cannot follow yourself.');
+        }
+ 
+        return this.userService.followUser(meId, targetUserId);
     }
-
-    // POST /users/:id/unfollow
-    // GET /users/:id
+ 
     @Get(':id')
     async getUserDetails(@Param('id') id: string) {
-        return this.userService.userDetails(id);
+        return this.userService.getUserDetails(id);
     }
-
-    
-    // GET /users/:id/followees
-    @Get(':id/followees')
-    async getUserFollowees(@Param('id') id: string) {
-        if (!/^\d+$/.test(id)) {
-            throw new BadRequestException('User Id must be a non-negative integer.');
+ 
+    // ten kursor double check 
+    @Get(':id/following')
+    async getUserFollowees(
+        @Param('id') id: string,
+        @Query('take') take?: string,
+        @Query('cursor') cursor?: string,
+        ): Promise<{ hasMore: boolean; items: { createdAt: Date; email: string; id: string; username: string; }[]; nextCursor: string; }> {
+        const pageSize = Math.min(Math.max(Number(take ?? 20) || 20, 1), 100);
+ 
+        let decodedCursor: { followerId: string; followingId: string } | undefined;
+        if (cursor) {
+            try {
+            decodedCursor = JSON.parse(Buffer.from(cursor, 'base64url').toString('utf8'));
+            } catch {
+            throw new BadRequestException('Invalid cursor');
+            }
         }
-
-        return await this.userService.getUserFollowees(id);
+ 
+        const { items, nextCursor } = await this.userService.getUserFollowees(id, pageSize, decodedCursor);
+ 
+        return {
+            hasMore: Boolean(nextCursor),
+            items,
+            nextCursor: nextCursor
+            ? Buffer.from(JSON.stringify(nextCursor), 'utf8').toString('base64url')
+            : undefined,
+        };
     }
-
-    // GET /users/:id/followers
+ 
+    // ten kursor double check 
     @Get(':id/followers')
-    async getUserFollowers(@Param('id') id: string) {
-        if (!/^\d+$/.test(id)) {
-            throw new BadRequestException('User Id must be a non-negative integer.');
+    async getUserFollowers(
+        @Param('id') id: string,
+        @Query('take') take?: string,
+        @Query('cursor') cursor?: string,
+        ) {
+        const pageSize = Math.min(Math.max(Number(take ?? 20) || 20, 1), 100);
+ 
+        let decodedCursor: { followerId: string; followingId: string } | undefined;
+        if (cursor) {
+            try {
+            decodedCursor = JSON.parse(Buffer.from(cursor, 'base64url').toString('utf8'));
+            } catch {
+            throw new BadRequestException('Invalid cursor');
+            }
         }
-        
-        return this.userService.getUserFollowers(id);
+ 
+        const { items, nextCursor } = await this.userService.getUserFollowers(id, pageSize, decodedCursor);
+ 
+        return {
+            hasMore: Boolean(nextCursor),
+            items,
+            nextCursor: nextCursor
+            ? Buffer.from(JSON.stringify(nextCursor), 'utf8').toString('base64url')
+            : undefined,
+        };
     }
-
-    // ze to jest tylko dla userow dostepne, ci co maja, najpierw many to many zrobic
-    @Post(':id/unfollow')
-    async unfollowUser(@Param('id', ParseIntPipe) id: number) {
-        //nie mozna odfollowowac samego siebie
-        // return this.userService.unfollowUser();
+ 
+    @Delete(':id')
+    @HttpCode(204)
+    async hardDeleteUser(@Param('id') id: string /* , @Req() req */): Promise<void> {
+        // TODO: enforce admin auth here (e.g., RolesGuard or check req.user.role)
+        await this.userService.hardDeleteUser(id);
+        // 204 -> no response body
     }
+ 
+    @Delete(':id/block')
+    async unblockUser(@Param('id') targetUserId: string /* , @Req() req */) {
+        // TODO: replace with your auth user id
+        const meId = 'REPLACE_ME';
+        await this.userService.unblockUser(meId, targetUserId);
+        // explicit 204 No Content response
+        return { message: 'Unblocked successfully', statusCode: 204 };
+    }
+ 
+    @Delete(':id/follow')
+    async unfollowUser(@Param('id') targetUserId: string /* , @Req() req */) {
+        // TODO: replace with your current user ID (e.g. req.user.id or @CurrentUser())
+        const meId = 'REPLACE_ME';
+ 
+        if (meId === targetUserId) {
+            throw new BadRequestException('You cannot unfollow yourself.');
+        }
+ 
+        return this.userService.unfollowUser(meId, targetUserId);
+    }
+ 
+    @Patch(':id')
+    async updateUser(@Param('id') id: string, @Body() dto: UpdateUserDto) {
+        // TODO: ensure the caller is the same user or an admin
+        // const meId = req.user.id; if (meId !== id && !isAdmin) throw new ForbiddenException();
+        return this.userService.updateUser(id, dto);
+    }
+    // TODO: soft delete by user himself
+    // TODO: ban / unban
+    // TODO: get every user
 }
-
-//patch users, get followers i get followees dzisiaj zrobic

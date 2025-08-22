@@ -6,43 +6,98 @@ datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
-
+ 
+enum UserRole {
+  ADMIN
+  REGULAR
+}
+ 
+model UserBlock {
+  id         String   @id @default(cuid())   // easy cursors
+  blockerId  String
+  blockedId  String
+  createdAt  DateTime @default(now())
+ 
+  blocker User @relation("BlocksInitiated", fields: [blockerId], references: [id], onDelete: Cascade)
+  blocked User @relation("BlocksReceived",  fields: [blockedId], references: [id], onDelete: Cascade)
+ 
+  @@unique([blockerId, blockedId]) // no duplicate blocks
+  @@index([blockerId])
+  @@index([blockedId])
+}
+ 
+ 
 model User {
   id           String   @id @default(uuid())
   email        String   @unique
   username     String   @unique
   passwordHash String
-  phoneNumber  String   @unique
+  phoneNumber  String   @unique // moze byc array of phone nums?
   createdAt    DateTime @default(now())
-
+  updatedAt    DateTime @updatedAt
+ 
+  role UserRole @default(REGULAR)
+  @@index([role])
+ 
+  bio          String?  @db.VarChar(500) // optional, max 500 chars
+ 
+  isBanned     Boolean   @default(false)
+  bannedOn     DateTime?
+  bannedUntil  DateTime?     // null => permanent
+  banReason    String?
+  bannedById   String?       // FK column required for relation
+  bannedBy     User?     @relation("BansIssued", fields: [bannedById], references: [id], onDelete: SetNull)
+  bansIssued   User[]    @relation("BansIssued") // admins -> users they banned
+ 
   sessions     Session[]
   tokens       Token[]
-
-  passwordResetToken   String?
-  passwordResetExpires DateTime?
-
+ 
+  passwordResetToken       String?
+  passwordResetExpires     DateTime?
   emailVerificationToken   String?
   emailVerificationExpires DateTime?
+ 
+  following        Follow[]    @relation("Following") // edges out
+  followers        Follow[]    @relation("Followers") // edges in
+ 
+  blocksInitiated  UserBlock[] @relation("BlocksInitiated")
+  blocksReceived   UserBlock[] @relation("BlocksReceived")
+ 
+  @@index([isBanned])
+  @@index([bannedUntil])
 }
-
+ 
+model Follow {
+  followerId  String
+  followingId String
+  createdAt   DateTime @default(now())
+ 
+  follower  User @relation("Following", fields: [followerId], references: [id], onDelete: Cascade)
+  following User @relation("Followers", fields: [followingId], references: [id], onDelete: Cascade)
+ 
+  @@id([followerId, followingId])
+  @@index([followerId])
+  @@index([followingId])
+}
+ 
 model Session {
   id           String     @id @default(uuid())
   user         User       @relation(fields: [userId], references: [id])
   userId       String
-
+ 
   ip           String?
   userAgent    String?
   createdAt    DateTime   @default(now())
   expiresAt    DateTime?
-
+ 
   @@index([userId])
 }
-
+ 
 model Token {
   id           String   @id @default(uuid())
   user         User     @relation(fields: [userId], references: [id])
   userId       String   @unique
-  
+ 
   accessToken  String
   refreshToken String
   createdAt    DateTime @default(now())
