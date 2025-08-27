@@ -1,141 +1,125 @@
-import { 
-    BadRequestException, 
-    Body, 
-    Controller, 
-    Delete, 
-    Get, 
-    HttpCode, 
+import {
+    BadRequestException,
+    Body,
+    Controller,
+    Delete,
+    Get,
+    HttpCode,
     Param,
-    Patch, 
+    Patch,
     Post,
-    Query
-  } from '@nestjs/common';
- 
-import { UpdateUserDto } from './dto';
+    Query,
+    Req,
+    UseGuards
+} from '@nestjs/common';
+
+import { PublicUserDto, UpdateUserDto } from './dto';
 import { UserService } from './user.service';
- 
+import { AdminGuard } from '../../core/guards/admin-guard';
+import { BanUserDto } from './dto/ban-user.dto';
+
 @Controller('users')
 export class UserController {
-    constructor(private readonly userService: UserService) {}
- 
-    @Post(':id/block')
-    async blockUser(@Param('id') targetUserId: string /*, @Req() req */) {
-      // TODO: replace with your auth user id, e.g. req.user.id or @CurrentUser()
-      const meId = 'REPLACE_ME';
- 
-      return this.userService.blockUser(meId, targetUserId);
+    constructor(private readonly userService: UserService) { }
+
+    //jeszcze JWTGuard, przed AdminGuardem
+    @UseGuards(AdminGuard)
+    @Delete(':id')
+    @HttpCode(204)
+    async hardDeleteUser(@Param('id') id: string): Promise<void> {
+        await this.userService.hardDeleteUser(id);
     }
- 
-    @Post(':id/follow')
-    async followUser(@Param('id') targetUserId: string) {
-        const meId = 'REPLACE_ME';
- 
-        if (meId === targetUserId) {
-            throw new BadRequestException('You cannot follow yourself.');
-        }
- 
-        return this.userService.followUser(meId, targetUserId);
-    }
- 
+
+    // jwt guard
     @Get(':id')
-    async getUserDetails(@Param('id') id: string) {
+    async getUserDetails(@Param('id') id: string): Promise<PublicUserDto> {
         return this.userService.getUserDetails(id);
     }
- 
-    // ten kursor double check 
+
+    // jwt guard
+    @Patch(':id')
+    async updateUser(@Param('id') id: string, @Body() dto: UpdateUserDto) {
+        return this.userService.updateUser(id, dto);
+    }
+
+    // jwt guard
+    @UseGuards(AdminGuard)
+    @Patch(':id/ban')
+    async banUser(
+        @Param('id') id: string,
+        @Body() dto: BanUserDto,
+        @Req() req,
+    ): Promise<void> {
+        await this.userService.banUser(id, dto, req.user.id); // pass banning admin id
+    }
+
+    // jwt guard 
+    @UseGuards(AdminGuard)
+    @Patch(':id/unban')
+    @HttpCode(204)
+    async unbanUser(
+        @Param('id') id: string,
+        @Req() req: any,
+    ): Promise<void> {
+        await this.userService.unbanUser(id, req.user.id);
+    }
+
+    // leave for now
+    // @Delete(':id/soft')
+    // @HttpCode(204)
+    // async softDeleteUser(@Param('id') id: string): Promise<void> {
+    //     // await this.userService.softDeleteUser(id);
+    // }
+
+    // auth guard, self guard
+    // @UseGuards(JwtAuthGuard)
+    @Post(':id/follow')
+    @HttpCode(201) // Created (or 200 if you prefer)
+    async followUser(
+        @Param('id') targetUserId: string,
+        @Req() req: any,
+    ) {
+        return this.userService.followUser(req.user.id, targetUserId);
+    }
+
+    // DELETE /users/:id/follow — unfollow target user
+    // @UseGuards(JwtAuthGuard)
+    @Delete(':id/follow')
+    @HttpCode(204) // No Content
+    async unfollowUser(
+        @Param('id') targetUserId: string,
+        @Req() req: any,
+    ): Promise<void> {
+        await this.userService.unfollowUser(req.user.id, targetUserId);
+    }
+
     @Get(':id/following')
     async getUserFollowees(
         @Param('id') id: string,
-        @Query('take') take?: string,
-        @Query('cursor') cursor?: string,
-        ): Promise<{ hasMore: boolean; items: { createdAt: Date; email: string; id: string; username: string; }[]; nextCursor: string; }> {
-        const pageSize = Math.min(Math.max(Number(take ?? 20) || 20, 1), 100);
- 
-        let decodedCursor: { followerId: string; followingId: string } | undefined;
-        if (cursor) {
-            try {
-            decodedCursor = JSON.parse(Buffer.from(cursor, 'base64url').toString('utf8'));
-            } catch {
-            throw new BadRequestException('Invalid cursor');
-            }
-        }
- 
-        const { items, nextCursor } = await this.userService.getUserFollowees(id, pageSize, decodedCursor);
- 
-        return {
-            hasMore: Boolean(nextCursor),
-            items,
-            nextCursor: nextCursor
-            ? Buffer.from(JSON.stringify(nextCursor), 'utf8').toString('base64url')
-            : undefined,
-        };
+    ): Promise<PublicUserDto[]> {
+        return this.userService.getUserFollowees(id);
     }
- 
-    // ten kursor double check 
+
     @Get(':id/followers')
     async getUserFollowers(
         @Param('id') id: string,
-        @Query('take') take?: string,
-        @Query('cursor') cursor?: string,
-        ) {
-        const pageSize = Math.min(Math.max(Number(take ?? 20) || 20, 1), 100);
- 
-        let decodedCursor: { followerId: string; followingId: string } | undefined;
-        if (cursor) {
-            try {
-            decodedCursor = JSON.parse(Buffer.from(cursor, 'base64url').toString('utf8'));
-            } catch {
-            throw new BadRequestException('Invalid cursor');
-            }
-        }
- 
-        const { items, nextCursor } = await this.userService.getUserFollowers(id, pageSize, decodedCursor);
- 
-        return {
-            hasMore: Boolean(nextCursor),
-            items,
-            nextCursor: nextCursor
-            ? Buffer.from(JSON.stringify(nextCursor), 'utf8').toString('base64url')
-            : undefined,
-        };
+    ): Promise<PublicUserDto[]> {
+        return this.userService.getUserFollowers(id);
     }
- 
-    @Delete(':id')
-    @HttpCode(204)
-    async hardDeleteUser(@Param('id') id: string /* , @Req() req */): Promise<void> {
-        // TODO: enforce admin auth here (e.g., RolesGuard or check req.user.role)
-        await this.userService.hardDeleteUser(id);
-        // 204 -> no response body
-    }
- 
+
+    //@UseGuards(JwtAuthGuard)
     @Delete(':id/block')
-    async unblockUser(@Param('id') targetUserId: string /* , @Req() req */) {
-        // TODO: replace with your auth user id
+    @HttpCode(204)
+    async unblockUser(@Req() req, @Param('id') blockedId: string): Promise<void> {
+        await this.userService.unblockUser(req.user.id, blockedId);
+    }
+
+    // self guard, jwt guard
+    @Post(':id/block')
+    async blockUser(@Param('id') targetUserId: string /*, @Req() req */) {
+        // TODO: replace with your auth user id, e.g. req.user.id or @CurrentUser()
         const meId = 'REPLACE_ME';
-        await this.userService.unblockUser(meId, targetUserId);
-        // explicit 204 No Content response
-        return { message: 'Unblocked successfully', statusCode: 204 };
+
+        return this.userService.blockUser(meId, targetUserId);
     }
- 
-    @Delete(':id/follow')
-    async unfollowUser(@Param('id') targetUserId: string /* , @Req() req */) {
-        // TODO: replace with your current user ID (e.g. req.user.id or @CurrentUser())
-        const meId = 'REPLACE_ME';
- 
-        if (meId === targetUserId) {
-            throw new BadRequestException('You cannot unfollow yourself.');
-        }
- 
-        return this.userService.unfollowUser(meId, targetUserId);
-    }
- 
-    @Patch(':id')
-    async updateUser(@Param('id') id: string, @Body() dto: UpdateUserDto) {
-        // TODO: ensure the caller is the same user or an admin
-        // const meId = req.user.id; if (meId !== id && !isAdmin) throw new ForbiddenException();
-        return this.userService.updateUser(id, dto);
-    }
-    // TODO: soft delete by user himself
-    // TODO: ban / unban
-    // TODO: get every user
 }
