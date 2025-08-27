@@ -56,7 +56,7 @@ export class UserService {
   }
 
   // DONE
-  async unbanUser(id: string, adminId: string): Promise<void> {
+  async unbanUser(id: string): Promise<void> {
     const user = await this.prisma.user.findUnique({ where: { id } });
 
     if (!user) throw new NotFoundException('User not found');
@@ -87,11 +87,6 @@ export class UserService {
     if (!exists) {
       throw new NotFoundException('User not found');
     }
-
-    /*
-        ze tutaj tez trzeba okazji te wszystkie inne rzeczy pousuwac,
-        relacje userBlock, bo on cascad nie ma
-    */
   }
 
   // this is complicated, leave for now
@@ -342,48 +337,52 @@ export class UserService {
   }
 
   // DONE
-  async blockUser(blockerId: string, blockedId: string) {
-    if (blockerId === blockedId) {
-      throw new BadRequestException('You cannot block yourself.');
+  async blockUser(targetUserId: string, blockerId: string) {
+    if (blockerId === targetUserId) {
+      // Defense in depth (even if NotSelfGuard is used)
+      throw new BadRequestException('You cannot block yourself');
     }
-
+  
     const [blocker, blocked] = await Promise.all([
       this.prisma.user.findUnique({ select: { id: true }, where: { id: blockerId } }),
-      this.prisma.user.findUnique({ select: { id: true }, where: { id: blockedId } }),
+      this.prisma.user.findUnique({ select: { id: true }, where: { id: targetUserId } }),
     ]);
+  
     if (!blocker || !blocked) {
       throw new NotFoundException('User not found');
     }
-
+  
     try {
       const result = await this.prisma.$transaction(async (tx) => {
         const block = await tx.userBlock.upsert({
-          where: { blockerId_blockedId: { blockerId, blockedId } }, // requires @@unique([blockerId, blockedId])
-          create: { blockerId, blockedId },
+          where: { blockerId_blockedId: { blockerId, blockedId: targetUserId } }, // uses @@unique([blockerId, blockedId])
+          create: { blockerId, blockedId: targetUserId },
           update: {},
           select: { id: true, blockerId: true, blockedId: true, createdAt: true },
         });
-
+  
+        // Break any follow relationships in either direction
         await tx.follow.deleteMany({
           where: {
             OR: [
-              { followerId: blockerId, followingId: blockedId },
-              { followerId: blockedId, followingId: blockerId },
+              { followerId: blockerId,    followingId: targetUserId },
+              { followerId: targetUserId, followingId: blockerId }, 
             ],
           },
         });
-
+  
         return block;
       });
-
+  
       return result;
     } catch (e: any) {
-      if (e.code === 'P2003') throw new NotFoundException('User not found');
+      // P2003 = FK constraint failed (shouldn't happen since we validated existence, but just in case)
+      if (e?.code === 'P2003') throw new NotFoundException('User not found');
       throw e;
     }
   }
 
-  // DONE
+  // DONE, blockedId kind of unnecessary
   async unblockUser(blockerId: string, blockedId: string): Promise<void> {
     const res = await this.prisma.userBlock.deleteMany({
       where: { blockedId, blockerId },

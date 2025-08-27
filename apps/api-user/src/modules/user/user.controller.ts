@@ -1,5 +1,4 @@
 import {
-    BadRequestException,
     Body,
     Controller,
     Delete,
@@ -8,7 +7,6 @@ import {
     Param,
     Patch,
     Post,
-    Query,
     Req,
     UseGuards
 } from '@nestjs/common';
@@ -17,51 +15,39 @@ import { PublicUserDto, UpdateUserDto } from './dto';
 import { UserService } from './user.service';
 import { AdminGuard } from '../../core/guards/admin-guard';
 import { BanUserDto } from './dto/ban-user.dto';
+import { SelfGuard } from '../../core/guards/self-guard';
+import { NotSelfGuard } from '../../core/guards/not-self-guard';
+
+import { JwtAuthGuard } from 'packages/jwt-auth.guard';
 
 @Controller('users')
 export class UserController {
     constructor(private readonly userService: UserService) { }
 
-    //jeszcze JWTGuard, przed AdminGuardem
-    @UseGuards(AdminGuard)
-    @Delete(':id')
-    @HttpCode(204)
-    async hardDeleteUser(@Param('id') id: string): Promise<void> {
-        await this.userService.hardDeleteUser(id);
-    }
-
-    // jwt guard
+    @UseGuards(JwtAuthGuard)
     @Get(':id')
     async getUserDetails(@Param('id') id: string): Promise<PublicUserDto> {
         return this.userService.getUserDetails(id);
     }
 
-    // jwt guard
+    @UseGuards(JwtAuthGuard, SelfGuard, AdminGuard)
     @Patch(':id')
     async updateUser(@Param('id') id: string, @Body() dto: UpdateUserDto) {
         return this.userService.updateUser(id, dto);
     }
 
-    // jwt guard
-    @UseGuards(AdminGuard)
+    @UseGuards(JwtAuthGuard, AdminGuard, NotSelfGuard)
     @Patch(':id/ban')
-    async banUser(
-        @Param('id') id: string,
-        @Body() dto: BanUserDto,
-        @Req() req,
-    ): Promise<void> {
-        await this.userService.banUser(id, dto, req.user.id); // pass banning admin id
+    async banUser(@Param('id') id: string, @Body() dto: BanUserDto, @Req() req): Promise<void> {
+        const adminId = req.user.id;
+        await this.userService.banUser(id, dto, adminId);
     }
 
-    // jwt guard 
-    @UseGuards(AdminGuard)
+    @UseGuards(JwtAuthGuard, AdminGuard, NotSelfGuard)
     @Patch(':id/unban')
     @HttpCode(204)
-    async unbanUser(
-        @Param('id') id: string,
-        @Req() req: any,
-    ): Promise<void> {
-        await this.userService.unbanUser(id, req.user.id);
+    async unbanUser(@Param('id') id: string): Promise<void> {
+        await this.userService.unbanUser(id);
     }
 
     // leave for now
@@ -71,55 +57,50 @@ export class UserController {
     //     // await this.userService.softDeleteUser(id);
     // }
 
-    // auth guard, self guard
-    // @UseGuards(JwtAuthGuard)
+    @UseGuards(JwtAuthGuard, AdminGuard)
+    @Delete(':id')
+    @HttpCode(204)
+    async hardDeleteUser(@Param('id') id: string): Promise<void> {
+        await this.userService.hardDeleteUser(id);
+    }
+
+    @UseGuards(JwtAuthGuard, NotSelfGuard)
     @Post(':id/follow')
-    @HttpCode(201) // Created (or 200 if you prefer)
-    async followUser(
-        @Param('id') targetUserId: string,
-        @Req() req: any,
-    ) {
+    @HttpCode(201)
+    async followUser(@Param('id') targetUserId: string, @Req() req: any) {
         return this.userService.followUser(req.user.id, targetUserId);
     }
 
-    // DELETE /users/:id/follow — unfollow target user
-    // @UseGuards(JwtAuthGuard)
+    @UseGuards(JwtAuthGuard, NotSelfGuard)
     @Delete(':id/follow')
     @HttpCode(204) // No Content
-    async unfollowUser(
-        @Param('id') targetUserId: string,
-        @Req() req: any,
-    ): Promise<void> {
+    async unfollowUser(@Param('id') targetUserId: string, @Req() req: any): Promise<void> {
         await this.userService.unfollowUser(req.user.id, targetUserId);
     }
 
+    @UseGuards(JwtAuthGuard)
     @Get(':id/following')
-    async getUserFollowees(
-        @Param('id') id: string,
-    ): Promise<PublicUserDto[]> {
+    async getUserFollowees(@Param('id') id: string): Promise<PublicUserDto[]> {
         return this.userService.getUserFollowees(id);
     }
 
+    @UseGuards(JwtAuthGuard)
     @Get(':id/followers')
-    async getUserFollowers(
-        @Param('id') id: string,
-    ): Promise<PublicUserDto[]> {
+    async getUserFollowers(@Param('id') id: string): Promise<PublicUserDto[]> {
         return this.userService.getUserFollowers(id);
     }
 
-    //@UseGuards(JwtAuthGuard)
+    @UseGuards(JwtAuthGuard, NotSelfGuard)
     @Delete(':id/block')
     @HttpCode(204)
     async unblockUser(@Req() req, @Param('id') blockedId: string): Promise<void> {
         await this.userService.unblockUser(req.user.id, blockedId);
     }
 
-    // self guard, jwt guard
+    @UseGuards(JwtAuthGuard, NotSelfGuard)
     @Post(':id/block')
-    async blockUser(@Param('id') targetUserId: string /*, @Req() req */) {
-        // TODO: replace with your auth user id, e.g. req.user.id or @CurrentUser()
-        const meId = 'REPLACE_ME';
-
-        return this.userService.blockUser(meId, targetUserId);
+    async blockUser(@Param('id') id: string, @Req() req: any) {
+        const blockerId = req.user.id;
+        return this.userService.blockUser(id, blockerId);
     }
 }
