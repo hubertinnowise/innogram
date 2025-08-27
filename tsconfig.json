@@ -20,7 +20,11 @@
         "strictNullChecks": true,
         "noImplicitAny": true,
         "strictBindCallApply": true,
-        "noFallthroughCasesInSwitch": true
+        "noFallthroughCasesInSwitch": true,
+        "paths": {
+            "@packages/utils/*": ["packages/utils/*"],
+            "@packages": ["packages/index.ts"]
+        }
     },
     "extends": "./tsconfig.base.json",
     "exclude": ["apps/*/prisma/"]
