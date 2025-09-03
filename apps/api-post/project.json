@@ -1,0 +1,24 @@
+{
+    "name": "api-post",
+    "$schema": "../../node_modules/nx/schemas/project-schema.json",
+    "sourceRoot": "apps/api-post/src",
+    "projectType": "application",
+    "tags": [],
+    "targets": {
+        "serve": {
+            "executor": "@nx/js:node",
+            "defaultConfiguration": "development",
+            "options": {
+                "buildTarget": "api-post:build"
+            },
+            "configurations": {
+                "development": {
+                    "buildTarget": "api-post:build:development"
+                },
+                "production": {
+                    "buildTarget": "api-post:build:production"
+                }
+            }
+        }
+    }
+}
