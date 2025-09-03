@@ -18,7 +18,7 @@
             "dependsOn": ["prisma-generate"],
             "options": {
                 "outputPath": "dist/apps/api-user",
-                "command": "bash -c 'tsc -p apps/api-user/tsconfig.app.json && tsc-alias -p apps/api-user/tsconfig.app.json'",
+                "command": "./scripts/build-api-user.sh",
                 "parallel": false,
                 "assets": [
                     {
