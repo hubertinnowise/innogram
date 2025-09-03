@@ -78,7 +78,8 @@
                 "apps/myapp/my-app-e2e/**/*",
                 "apps/api-user/api-user-e2e/**/*",
                 "apps/api-user-e2e/**/*",
-                "apps/api-auth-e2e/**/*"
+                "apps/api-auth-e2e/**/*",
+                "apps/api-post-e2e/**/*"
             ]
         }
     ]
