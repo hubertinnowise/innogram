@@ -29,7 +29,7 @@ import {
 @ApiTags('Users')
 @Controller('users')
 export class UserController {
-  constructor(private readonly userService: UserService) {}
+  constructor(private readonly userService: UserService) { }
 
   @UseGuards(JwtAuthGuard, AdminGuard, NotSelfGuard)
   @Patch(':id/ban')

@@ -11,13 +11,23 @@ import { ClientProxy } from '@nestjs/microservices';
 import { DatabaseService } from '../../core/database/database.service';
 import { PublicUserDto, UpdateUserDto } from './dto';
 import { BanUserDto } from './dto/ban-user.dto';
+import { BanUserResponse, BlockUserResponse, FollowUserResponse, UnbanUserResponse, UnblockUserResponse, UnfollowUserResponse } from './responses';
+import { ListUsersResponse } from './responses/list-user.response';
+import { IsUserBannedResponse } from './responses/is-user-banned.response';
 
 @Injectable()
 export class UserService {
-    // DONE
-    async banUser(id: string, dto: BanUserDto, adminId: string): Promise<void> {
-        const user = await this.prisma.user.findUnique({ where: { id } });
+    constructor(
+        private readonly prisma: DatabaseService,
+        @Inject('RABBITMQ_CLIENT') private readonly client: ClientProxy,
+    ) { }
 
+    // DONE
+    async banUser(id: string, dto: BanUserDto, adminId: string): Promise<BanUserResponse> {
+        const user = await this.prisma.user.findUnique({
+            select: { id: true },
+            where: { id },
+        });
         if (!user) throw new NotFoundException('User not found');
 
         await this.prisma.user.update({
@@ -30,10 +40,17 @@ export class UserService {
             },
             where: { id },
         });
+
+        return {
+            success: true,
+            message: 'User banned.',
+            adminId,
+            userId: id,
+        };
     }
 
     // DONE
-    async blockUser(targetUserId: string, blockerId: string) {
+    async blockUser(targetUserId: string, blockerId: string): Promise<BlockUserResponse> {
         if (blockerId === targetUserId) {
             // Defense in depth (even if NotSelfGuard is used)
             throw new BadRequestException('You cannot block yourself');
@@ -49,12 +66,11 @@ export class UserService {
         }
 
         try {
-            const result = await this.prisma.$transaction(async (tx) => {
-                const block = await tx.userBlock.upsert({
+            await this.prisma.$transaction(async (tx) => {
+                await tx.userBlock.upsert({
                     create: { blockedId: targetUserId, blockerId },
-                    select: { blockedId: true, blockerId: true, createdAt: true, id: true },
                     update: {},
-                    where: { blockerId_blockedId: { blockedId: targetUserId, blockerId } }, // uses @@unique([blockerId, blockedId])
+                    where: { blockerId_blockedId: { blockedId: targetUserId, blockerId } }, // @@unique([blockerId, blockedId])
                 });
 
                 // Break any follow relationships in either direction
@@ -66,34 +82,27 @@ export class UserService {
                         ],
                     },
                 });
-
-                return block;
             });
 
-            return result;
+            return {
+                success: true,
+                message: 'User blocked.',
+                blockerId,
+                blockedId: targetUserId,
+            };
         } catch (e: any) {
-            // P2003 = FK constraint failed (shouldn't happen since we validated existence, but just in case)
+            // Keep as-is per your request (no Prisma helper changes yet)
             if (e?.code === 'P2003') throw new NotFoundException('User not found');
             throw e;
         }
     }
 
-    constructor(
-        private readonly prisma: DatabaseService,
-        @Inject('RABBITMQ_CLIENT') private readonly client: ClientProxy,
-    ) {}
-
     // pagination
-    async findAll(): Promise<PublicUserDto[]> {
+    async findAll(): Promise<ListUsersResponse> {
         const users = await this.prisma.user.findMany({
             orderBy: { createdAt: 'desc' },
             select: {
-                _count: {
-                    select: {
-                        followers: true, // "Followers" relation
-                        following: true, // "Following" relation
-                    },
-                },
+                _count: { select: { followers: true, following: true } },
                 bio: true,
                 createdAt: true,
                 email: true,
@@ -102,8 +111,7 @@ export class UserService {
             },
         });
 
-        // map -> DTO
-        return users.map((u) => ({
+        const items = users.map((u) => ({
             bio: u.bio ?? undefined,
             createdAt: u.createdAt,
             email: u.email,
@@ -112,10 +120,12 @@ export class UserService {
             id: u.id,
             username: u.username,
         }));
+
+        return { items, count: items.length };
     }
 
     // DONE
-    async followUser(followerId: string, followingId: string) {
+    async followUser(followerId: string, followingId: string): Promise<FollowUserResponse> {
         if (followerId === followingId) {
             throw new BadRequestException('You cannot follow yourself.');
         }
@@ -142,27 +152,29 @@ export class UserService {
             throw new NotFoundException('User not found');
         }
 
-        return this.prisma.follow.upsert({
+        // idempotent: creates if not exists, no-op if already following
+        await this.prisma.follow.upsert({
             create: { followerId, followingId },
-            select: { createdAt: true, followerId: true, followingId: true },
-            update: {}, // no-op if already following
+            update: {},
             where: { followerId_followingId: { followerId, followingId } },
         });
+
+        return {
+            success: true,
+            message: 'Now following the user.',
+            followerId,
+            targetUserId: followingId,
+        };
     }
 
     // DONE
     async getUserDetails(userId: string): Promise<PublicUserDto> {
         const user = await this.prisma.user.findUnique({
             select: {
-                _count: {
-                    select: {
-                        followers: true,
-                        following: true,
-                    },
-                },
-                bio: true, // add to match PublicUserDto
+                _count: { select: { followers: true, following: true } },
+                bio: true,
                 createdAt: true,
-                email: true, // keep only if public
+                email: true,
                 id: true,
                 username: true,
             },
@@ -255,6 +267,7 @@ export class UserService {
     }
 
     // pay attention to related records while deleting, same with soft delete
+    // add typed response
     async hardDeleteUser(userId: string): Promise<void> {
         const exists = await this.prisma.user.findUnique({
             select: { id: true },
@@ -267,29 +280,27 @@ export class UserService {
     }
 
     // DONE
-    async isUserBanned(userId: string): Promise<boolean> {
+    async isUserBanned(userId: string): Promise<IsUserBannedResponse> {
         const user = await this.prisma.user.findUnique({
-            select: {
-                bannedUntil: true,
-                isBanned: true,
-            },
+            select: { bannedUntil: true, isBanned: true },
             where: { id: userId },
         });
 
         if (!user) {
-            throw new Error('User not found');
+            throw new NotFoundException('User not found');
         }
 
         if (!user.isBanned) {
-            return false;
+            return { isBanned: false };
         }
 
         if (!user.bannedUntil) {
-            return true;
+            return { isBanned: true };
         }
 
-        return user.bannedUntil > new Date();
+        return { isBanned: user.bannedUntil > new Date() };
     }
+
 
     // this is complicated, leave for now
     async softDeleteUser(): Promise<PublicUserDto> {
@@ -298,13 +309,24 @@ export class UserService {
     }
 
     // DONE
-    async unbanUser(id: string): Promise<void> {
-        const user = await this.prisma.user.findUnique({ where: { id } });
+    async unbanUser(id: string): Promise<UnbanUserResponse> {
+        const user = await this.prisma.user.findUnique({
+            select: {
+                id: true,
+                isBanned: true,
+                bannedUntil: true,
+                bannedOn: true,
+                banReason: true,
+                bannedById: true,
+            },
+            where: { id },
+        });
 
         if (!user) throw new NotFoundException('User not found');
 
+        // nothing to clear — already unbanned
         if (!user.isBanned && !user.bannedUntil && !user.bannedOn && !user.banReason && !user.bannedById) {
-            return;
+            return { success: true, message: 'User already unbanned.', userId: id };
         }
 
         await this.prisma.user.update({
@@ -317,10 +339,13 @@ export class UserService {
             },
             where: { id },
         });
+
+        return { success: true, message: 'User unbanned.', userId: id };
     }
 
+
     // DONE, blockedId kind of unnecessary
-    async unblockUser(blockerId: string, blockedId: string): Promise<void> {
+    async unblockUser(blockerId: string, blockedId: string): Promise<UnblockUserResponse> {
         const res = await this.prisma.userBlock.deleteMany({
             where: { blockedId, blockerId },
         });
@@ -328,10 +353,17 @@ export class UserService {
         if (res.count === 0) {
             throw new NotFoundException('Block not found.');
         }
+
+        return {
+            success: true,
+            message: 'User unblocked.',
+            blockerId,
+            blockedId,
+        };
     }
 
     // DONE
-    async unfollowUser(followerId: string, followingId: string) {
+    async unfollowUser(followerId: string, followingId: string): Promise<UnfollowUserResponse> {
         if (followerId === followingId) {
             throw new BadRequestException('You cannot unfollow yourself.');
         }
@@ -352,10 +384,15 @@ export class UserService {
             throw new NotFoundException('Follow relationship not found.');
         }
 
-        return { followerId, followingId };
+        return {
+            success: true,
+            message: 'Unfollowed successfully.',
+            followerId,
+            targetUserId: followingId,
+        };
     }
 
-    // DONE
+    // update by typed responses
     async updateUser(userId: string, dto: UpdateUserDto) {
         const exists = await this.prisma.user.findUnique({
             select: { id: true },
