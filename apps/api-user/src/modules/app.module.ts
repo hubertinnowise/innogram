@@ -9,9 +9,9 @@ import { CoreModule } from '../core/core.module';
 @Module({
     imports: [
         ConfigModule.forRoot({
-			expandVariables: true,
-			isGlobal: true,
-		}),
+            expandVariables: true,
+            isGlobal: true,
+        }),
         ClientsModule.register([
             {
                 name: 'RABBITMQ_CLIENT',
@@ -25,7 +25,7 @@ import { CoreModule } from '../core/core.module';
                 transport: Transport.RMQ,
             },
         ]),
-        CoreModule
+        CoreModule,
     ],
 })
 export class AppModule {}

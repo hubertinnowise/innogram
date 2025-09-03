@@ -7,11 +7,11 @@ import { AuthModule } from './auth/auth.module';
 @Module({
     imports: [
         ConfigModule.forRoot({
-			expandVariables: true,
-			isGlobal: true,
-		}),
+            expandVariables: true,
+            isGlobal: true,
+        }),
         AuthModule,
-        CoreModule
+        CoreModule,
     ],
 })
 export class AppModule {}

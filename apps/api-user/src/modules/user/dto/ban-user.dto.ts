@@ -1,11 +1,11 @@
-import { IsOptional, IsString, IsDateString } from 'class-validator';
+import { IsDateString, IsOptional, IsString } from 'class-validator';
 
 export class BanUserDto {
-  @IsOptional()
-  @IsDateString()
-  bannedUntil?: string; // ISO date string, null/undefined => permanent ban
+    @IsOptional()
+    @IsDateString()
+    bannedUntil?: string; // ISO date string, null/undefined => permanent ban
 
-  @IsOptional()
-  @IsString()
-  banReason?: string;
+    @IsOptional()
+    @IsString()
+    banReason?: string;
 }

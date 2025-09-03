@@ -5,9 +5,9 @@ import { Env } from './config.validation';
 
 @Injectable()
 export class ConfigService {
-  constructor(private configService: NestConfigService<Env, true>) {}
+    constructor(private configService: NestConfigService<Env, true>) {}
 
-  get<K extends keyof Env>(key: K): Env[K] {
-    return this.configService.get(key, { infer: true })!;
-  }
+    get<K extends keyof Env>(key: K): Env[K] {
+        return this.configService.get(key, { infer: true })!;
+    }
 }

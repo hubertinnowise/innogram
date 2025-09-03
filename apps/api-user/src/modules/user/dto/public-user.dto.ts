@@ -1,41 +1,31 @@
 import { Type } from 'class-transformer';
-import {
-  IsDate,
-  IsEmail,
-  IsInt,
-  IsOptional,
-  IsString,
-  IsUUID,
-  Length,
-  MaxLength,
-  Min,
-} from 'class-validator';
+import { IsDate, IsEmail, IsInt, IsOptional, IsString, IsUUID, Length, MaxLength, Min } from 'class-validator';
 
 export class PublicUserDto {
-  @IsOptional()
-  @IsString()
-  @MaxLength(500)
-  bio?: string;
+    @IsOptional()
+    @IsString()
+    @MaxLength(500)
+    bio?: string;
 
-  @Type(() => Date)
-  @IsDate()
-  createdAt!: Date;
+    @Type(() => Date)
+    @IsDate()
+    createdAt!: Date;
 
-  @IsEmail()
-  email!: string;
+    @IsEmail()
+    email!: string;
 
-  @IsInt()
-  @Min(0)
-  followersCount!: number;
+    @IsInt()
+    @Min(0)
+    followersCount!: number;
 
-  @IsInt()
-  @Min(0)
-  followingCount!: number;
+    @IsInt()
+    @Min(0)
+    followingCount!: number;
 
-  @IsUUID('4')
-  id!: string;
+    @IsUUID('4')
+    id!: string;
 
-  @IsString()
-  @Length(3, 30)
-  username!: string;
+    @IsString()
+    @Length(3, 30)
+    username!: string;
 }

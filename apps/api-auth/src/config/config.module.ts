@@ -6,13 +6,13 @@ import { EnvSchema } from './config.validation';
 
 @Global()
 @Module({
-  exports: [ConfigService],
-  imports: [
-    NestConfigModule.forRoot({
-      isGlobal: true, 
-      validate: (env) => EnvSchema.parse(env),
-    }),
-  ],
-  providers: [ConfigService],
+    exports: [ConfigService],
+    imports: [
+        NestConfigModule.forRoot({
+            isGlobal: true,
+            validate: (env) => EnvSchema.parse(env),
+        }),
+    ],
+    providers: [ConfigService],
 })
 export class ConfigModule {}

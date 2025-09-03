@@ -42,8 +42,8 @@ export const defaultConfig = {
                 'smooth-pulse': 'smooth-pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;',
             },
             colors: {
-                [ThemeColors.WHITE_1000]: '#ffffff',
                 current: 'currentColor',
+                [ThemeColors.WHITE_1000]: '#ffffff',
                 transparent: 'transparent',
             },
             keyframes: {

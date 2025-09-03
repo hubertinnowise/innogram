@@ -3,9 +3,61 @@
     "plugins": ["@nx", "unused-imports", "perfectionist"],
     "ignorePatterns": ["node_modules", "dist", "dev-dist", "build", ".history"],
     "rules": {
-        "@typescript-eslint/no-unused-vars": ["error", { "argsIgnorePattern": "^_" }]
+        "@typescript-eslint/no-unused-vars": ["error", { "argsIgnorePattern": "^_" }],
+        "perfectionist/sort-imports": [
+            "error",
+            {
+                "type": "alphabetical",
+                "order": "asc",
+                "ignore-case": true,
+                "groups": [
+                    "type",
+                    ["builtin", "external"],
+                    "internal-type",
+                    "internal",
+                    ["parent-type", "sibling-type", "index-type"],
+                    ["parent", "sibling", "index"],
+                    "object",
+                    "unknown"
+                ],
+                "newlines-between": "always",
+                "internal-pattern": ["@/**", "~/**", "packages/**"]
+            }
+        ],
+        "perfectionist/sort-named-imports": [
+            "error",
+            {
+                "type": "alphabetical",
+                "order": "asc",
+                "ignore-case": true
+            }
+        ],
+        "perfectionist/sort-exports": [
+            "error",
+            {
+                "type": "alphabetical",
+                "order": "asc",
+                "ignore-case": true
+            }
+        ],
+        "perfectionist/sort-objects": [
+            "error",
+            {
+                "type": "alphabetical",
+                "order": "asc",
+                "ignore-case": true
+            }
+        ],
+        "perfectionist/sort-classes": [
+            "error",
+            {
+                "type": "alphabetical",
+                "order": "asc",
+                "ignore-case": true
+            }
+        ]
     },
-    "extends": ["plugin:perfectionist/recommended-natural"],
+    "extends": ["plugin:perfectionist/recommended-alphabetical"],
     "overrides": [
         {
             "files": ["*.ts", "*.tsx", "*.js", "*.jsx"],

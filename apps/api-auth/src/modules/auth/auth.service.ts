@@ -10,26 +10,6 @@ import { LoginDto, RegisterDto } from './dto';
 
 @Injectable()
 export class AuthService {
-    constructor(
-        private readonly prisma: DatabaseService,
-        private readonly jwt: JwtService,
-        @Inject('RABBITMQ_CLIENT') private readonly rabbitClient: ClientProxy,
-    ) {}
-
-    private async compare(password: string, hash: string): Promise<boolean> {
-        return await bcrypt.compare(password, hash);
-    }
-
-    private generateTokens(userId: string) {
-        const accessToken = this.jwt.sign({ sub: userId }, { expiresIn: '15m' });
-        const refreshToken = this.jwt.sign({ sub: userId }, { expiresIn: '7d' });
-        return { accessToken, refreshToken };
-    }
-
-    private async hash(password: string): Promise<string> {
-        return await bcrypt.hash(password, 10);
-    }
-
     async changePassword(userId: string, oldPassword: string, newPassword: string) {
         const user = await this.prisma.user.findUnique({ where: { id: userId } });
 
@@ -47,6 +27,16 @@ export class AuthService {
         return { message: 'Password changed' };
     }
 
+    private async compare(password: string, hash: string): Promise<boolean> {
+        return await bcrypt.compare(password, hash);
+    }
+
+    constructor(
+        private readonly prisma: DatabaseService,
+        private readonly jwt: JwtService,
+        @Inject('RABBITMQ_CLIENT') private readonly rabbitClient: ClientProxy,
+    ) {}
+
     async forgotPassword(email: string) {
         const user = await this.prisma.user.findUnique({ where: { email } });
         if (!user) throw new NotFoundException('User not found');
@@ -63,6 +53,16 @@ export class AuthService {
         // });
 
         return { message: 'Password reset token generated', token };
+    }
+
+    private generateTokens(userId: string) {
+        const accessToken = this.jwt.sign({ sub: userId }, { expiresIn: '15m' });
+        const refreshToken = this.jwt.sign({ sub: userId }, { expiresIn: '7d' });
+        return { accessToken, refreshToken };
+    }
+
+    private async hash(password: string): Promise<string> {
+        return await bcrypt.hash(password, 10);
     }
 
     async login(dto: LoginDto) {

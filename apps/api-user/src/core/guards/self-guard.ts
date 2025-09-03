@@ -1,10 +1,4 @@
-import {
-    CanActivate,
-    ExecutionContext,
-    Injectable,
-    UnauthorizedException,
-    ForbiddenException,
-} from '@nestjs/common';
+import { CanActivate, ExecutionContext, ForbiddenException, Injectable, UnauthorizedException } from '@nestjs/common';
 
 @Injectable()
 export class SelfGuard implements CanActivate {
@@ -15,8 +9,8 @@ export class SelfGuard implements CanActivate {
 
         if (!user) {
             throw new UnauthorizedException('User not authenticated');
-        } 
-        
+        }
+
         if (!id) {
             throw new ForbiddenException('Missing target user id');
         }
@@ -28,5 +22,3 @@ export class SelfGuard implements CanActivate {
         return true;
     }
 }
-
-

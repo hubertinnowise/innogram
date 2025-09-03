@@ -1,64 +1,64 @@
 {
-  "name": "api-user",
-  "$schema": "../../node_modules/nx/schemas/project-schema.json",
-  "sourceRoot": "apps/api-user/src",
-  "projectType": "application",
-  "tags": ["type:service", "scope:backend"],
-  "targets": {
-    "build": {
-      "executor": "@nx/js:tsc",
-      "outputs": ["{options.outputPath}"],
-      "options": {
-        "outputPath": "dist/apps/api-user",
-        "main": "apps/api-user/src/main.ts",
-        "tsConfig": "apps/api-user/tsconfig.app.json",
-        "assets": [
-          {
-            "input": "apps/api-user/prisma/generated",
-            "glob": "**/*",
-            "output": "prisma/generated"
-          },
-          {
-            "input": "apps/api-user/prisma",
-            "glob": "schema.prisma",
-            "output": "prisma"
-          }
-        ]
-      },
-      "configurations": {
-        "development": { "sourceMap": true },
-        "production": { "sourceMap": false }
-      },
-      "defaultConfiguration": "development"
-    },
-    "serve": {
-      "executor": "@nx/js:node",
-      "options": {
-        "buildTarget": "api-user:build"
-      },
-      "configurations": {
-        "development": {
-          "buildTarget": "api-user:build:development"
+    "name": "api-user",
+    "$schema": "../../node_modules/nx/schemas/project-schema.json",
+    "sourceRoot": "apps/api-user/src",
+    "projectType": "application",
+    "tags": ["type:service", "scope:backend"],
+    "targets": {
+        "build": {
+            "executor": "@nx/js:tsc",
+            "outputs": ["{options.outputPath}"],
+            "options": {
+                "outputPath": "dist/apps/api-user",
+                "main": "apps/api-user/src/main.ts",
+                "tsConfig": "apps/api-user/tsconfig.app.json",
+                "assets": [
+                    {
+                        "input": "apps/api-user/prisma/generated",
+                        "glob": "**/*",
+                        "output": "prisma/generated"
+                    },
+                    {
+                        "input": "apps/api-user/prisma",
+                        "glob": "schema.prisma",
+                        "output": "prisma"
+                    }
+                ]
+            },
+            "configurations": {
+                "development": { "sourceMap": true },
+                "production": { "sourceMap": false }
+            },
+            "defaultConfiguration": "development"
         },
-        "production": {
-          "buildTarget": "api-user:build:production"
+        "serve": {
+            "executor": "@nx/js:node",
+            "options": {
+                "buildTarget": "api-user:build"
+            },
+            "configurations": {
+                "development": {
+                    "buildTarget": "api-user:build:development"
+                },
+                "production": {
+                    "buildTarget": "api-user:build:production"
+                }
+            },
+            "defaultConfiguration": "development"
+        },
+        "lint": {
+            "executor": "@nx/eslint:lint",
+            "options": {
+                "lintFilePatterns": ["apps/api-user/**/*.ts"]
+            }
+        },
+        "test": {
+            "executor": "@nx/jest:jest",
+            "outputs": ["{workspaceRoot}/coverage/apps/api-user"],
+            "options": {
+                "jestConfig": "apps/api-user/jest.config.ts",
+                "passWithNoTests": true
+            }
         }
-      },
-      "defaultConfiguration": "development"
-    },
-    "lint": {
-      "executor": "@nx/eslint:lint",
-      "options": {
-        "lintFilePatterns": ["apps/api-user/**/*.ts"]
-      }
-    },
-    "test": {
-      "executor": "@nx/jest:jest",
-      "outputs": ["{workspaceRoot}/coverage/apps/api-user"],
-      "options": {
-        "jestConfig": "apps/api-user/jest.config.ts",
-        "passWithNoTests": true
-      }
     }
-  }
 }

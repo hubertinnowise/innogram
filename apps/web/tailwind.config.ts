@@ -1,6 +1,7 @@
-import { Config } from '@/tailwind';
 import { createGlobPatternsForDependencies } from '@nx/react/tailwind';
 import { join } from 'path';
+
+import { Config } from '@/tailwind';
 
 // eslint-disable-next-line @nx/enforce-module-boundaries
 import { defaultConfig } from '../../packages/tailwind/src/tailwind.config';

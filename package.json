@@ -4,7 +4,9 @@
     "scripts": {
         "check:all": "pnpm nx format:check && pnpm nx run-many --all --target=lint && pnpm nx run-many --all --target=build --noEmitOnError",
         "format": "pnpm nx format:write --all",
-        "check:changed": "pnpm nx format:check && pnpm nx affected -t lint --quiet && pnpm nx affected -t build"
+        "check:changed": "pnpm nx format:check && pnpm nx affected -t lint --quiet && pnpm nx affected -t build",
+        "lint:fix": "pnpm nx format:write --all && pnpm nx run-many --all --target=lint --fix",
+        "fix:all": "pnpm lint:fix && pnpm nx run-many --all --target=build --noEmitOnError"
     },
     "private": true,
     "devDependencies": {

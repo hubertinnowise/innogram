@@ -1,10 +1,4 @@
-import {
-    CanActivate,
-    ExecutionContext,
-    Injectable,
-    UnauthorizedException,
-    BadRequestException,
-} from '@nestjs/common';
+import { BadRequestException, CanActivate, ExecutionContext, Injectable, UnauthorizedException } from '@nestjs/common';
 
 @Injectable()
 export class NotSelfGuard implements CanActivate {

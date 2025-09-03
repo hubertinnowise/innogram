@@ -1,5 +1,6 @@
-import { Toaster } from '@/ui-shared/components/toaster';
 import { ReactNode } from 'react';
+
+import { Toaster } from '@/ui-shared/components/toaster';
 
 import '../styles/global.css';
 
