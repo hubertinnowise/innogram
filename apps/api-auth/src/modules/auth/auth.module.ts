@@ -15,15 +15,15 @@ import { AuthService } from './auth.service';
             signOptions: { expiresIn: '15m' },
         }),
         ClientsModule.register([
-        {
-            name: 'RABBITMQ_CLIENT',
-            options: {
-            queue: process.env.RABBITMQ_QUEUE ?? 'default_queue',
-            queueOptions: { durable: false },
-            urls: [process.env.RABBITMQ_URL ?? 'amqp://guest:guest@rabbitmq:5672'],
+            {
+                name: 'RABBITMQ_CLIENT',
+                options: {
+                    queue: process.env.RABBITMQ_QUEUE ?? 'default_queue',
+                    queueOptions: { durable: false },
+                    urls: [process.env.RABBITMQ_URL ?? 'amqp://guest:guest@rabbitmq:5672'],
+                },
+                transport: Transport.RMQ,
             },
-            transport: Transport.RMQ,
-        },
         ]),
     ],
     providers: [AuthService, DatabaseService],

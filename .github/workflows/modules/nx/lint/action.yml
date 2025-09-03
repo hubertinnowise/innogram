@@ -13,6 +13,9 @@ runs:
         - name: Get nx env
           uses: ./.github/workflows/utils/get-nx-env
 
-        - name: Lint
+        - name: Lint and fix
           shell: bash
-          run: pnpm check:all
+          run: |
+              pnpm nx format:write --all
+              pnpm nx run-many --all --target=lint --fix
+              pnpm nx run-many --all --target=build --noEmitOnError

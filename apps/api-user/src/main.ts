@@ -8,14 +8,14 @@ import { NestFactory } from '@nestjs/core';
 
 import { AppModule } from './modules/app.module';
 
-// start this as a microservice, not http ? 
+// start this as a microservice, not http ?
 // const app = await NestFactory.createMicroservice<MicroserviceOptions>(
 // rejestrujesz rabbita tutaj?
 
 //moze byc both, i http server i microservice
 //tak ze jakby, ale chyba tak, ze ten serwis
-//samemu w sobie ma byc api jednoczesnie i 
-//uzywac rmq do komunikacji z innymi serwisami 
+//samemu w sobie ma byc api jednoczesnie i
+//uzywac rmq do komunikacji z innymi serwisami
 
 async function bootstrap() {
     const app = await NestFactory.create(AppModule);

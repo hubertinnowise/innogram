@@ -6,9 +6,9 @@ import {
     FieldValues,
     SetValueConfig,
     UseFormHandleSubmit,
+    useForm as useOriginalForm,
     UseFormProps as UseOriginalFormProps,
     UseFormReturn as UseOriginalFormReturn,
-    useForm as useOriginalForm,
 } from 'react-hook-form';
 
 export type SetTouchedConfig = Omit<SetValueConfig, 'shouldTouch'>;

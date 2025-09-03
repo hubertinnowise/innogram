@@ -13,13 +13,13 @@ import {
 
 @Controller('/')
 export class AuthController {
-    constructor(private readonly authService: AuthService) {}
-
     //status codes?
     @Post('change-password')
     changePassword(@Body() body: ChangePasswordDto) {
         return this.authService.changePassword(body.userId, body.oldPassword, body.newPassword);
     }
+
+    constructor(private readonly authService: AuthService) {}
 
     @Post('forgot-password')
     forgotPassword(@Body() body: ForgotPasswordDto) {
