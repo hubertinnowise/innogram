@@ -5,13 +5,21 @@
     "projectType": "application",
     "tags": ["type:service", "scope:backend"],
     "targets": {
+        "prisma-generate": {
+            "executor": "nx:run-commands",
+            "options": {
+                "command": "prisma generate",
+                "cwd": "apps/api-user"
+            }
+        },
         "build": {
-            "executor": "@nx/js:tsc",
+            "executor": "nx:run-commands",
             "outputs": ["{options.outputPath}"],
+            "dependsOn": ["prisma-generate"],
             "options": {
                 "outputPath": "dist/apps/api-user",
-                "main": "apps/api-user/src/main.ts",
-                "tsConfig": "apps/api-user/tsconfig.app.json",
+                "command": "bash -c 'tsc -p apps/api-user/tsconfig.app.json && tsc-alias -p apps/api-user/tsconfig.app.json'",
+                "parallel": false,
                 "assets": [
                     {
                         "input": "apps/api-user/prisma/generated",
