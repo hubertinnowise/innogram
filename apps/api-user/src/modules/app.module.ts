@@ -3,8 +3,7 @@ import { ConfigModule } from '@nestjs/config';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 
 import { CoreModule } from '../core/core.module';
-
-// import {  } from './auth/auth.module'; w importach dodac UserModule // ????
+import { UserModule } from './user/user.module';
 
 @Module({
     imports: [
@@ -25,6 +24,7 @@ import { CoreModule } from '../core/core.module';
                 transport: Transport.RMQ,
             },
         ]),
+        UserModule,
         CoreModule
     ],
 })
