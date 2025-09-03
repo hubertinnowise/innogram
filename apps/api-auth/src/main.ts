@@ -4,7 +4,7 @@ import cookieParser from 'cookie-parser';
 import * as dotenv from 'dotenv';
 dotenv.config();
 
-import { ConfigService } from '@nestjs/config';
+import { ConfigService } from './config/config.service';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 
 import { AppModule } from './modules/app.module';
