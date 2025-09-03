@@ -50,15 +50,7 @@ model User {
   bansIssued   User[]    @relation("BansIssued") // admins -> users they banned
   @@index([isBanned])
   @@index([bannedUntil])
- 
-  sessions     Session[]
-  tokens       Token[]
- 
-  passwordResetToken       String?
-  passwordResetExpires     DateTime?
-  emailVerificationToken   String?
-  emailVerificationExpires DateTime?
- 
+   
   following        Follow[]    @relation("Following") // edges out
   followers        Follow[]    @relation("Followers") // edges in
  
@@ -77,28 +69,4 @@ model Follow {
   @@id([followerId, followingId])
   @@index([followerId])
   @@index([followingId])
-}
- 
-model Session {
-  id           String     @id @default(uuid())
-  user         User       @relation(fields: [userId], references: [id])
-  userId       String
- 
-  ip           String?
-  userAgent    String?
-  createdAt    DateTime   @default(now())
-  expiresAt    DateTime?
- 
-  @@index([userId])
-}
- 
-model Token {
-  id           String   @id @default(uuid())
-  user         User     @relation(fields: [userId], references: [id])
-  userId       String   @unique
- 
-  accessToken  String
-  refreshToken String
-  createdAt    DateTime @default(now())
-  expiresAt   DateTime
 }
