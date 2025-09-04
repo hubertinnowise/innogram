@@ -41,6 +41,8 @@ model User {
  
   bio          String?  @db.VarChar(500)
  
+  deletedAt    DateTime?
+
   isBanned     Boolean   @default(false)
   bannedOn     DateTime?
   bannedUntil  DateTime?     // null => permanent
