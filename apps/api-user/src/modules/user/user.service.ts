@@ -9,7 +9,7 @@ import {
 } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 
-import { DatabaseService } from '../../core/database/database.service';
+import { DatabaseService } from '@core/database/database.service';
 import { PublicUserDto, UpdateUserDto } from './dto';
 import { BanUserDto } from './dto/ban-user.dto';
 import { BanUserResponse, BlockUserResponse, FollowUserResponse, UnbanUserResponse, UnblockUserResponse, UnfollowUserResponse } from './responses';
