@@ -5,6 +5,7 @@ import {
     Inject,
     Injectable,
     NotFoundException,
+    Logger
 } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 
@@ -17,8 +18,11 @@ import { IsUserBannedResponse } from './responses/is-user-banned.response';
 import { Prisma } from '@prisma/client';
 import { UpdateUserResponse } from './responses/update-user.response';
 
+
 @Injectable()
 export class UserService {
+    private readonly logger = new Logger(UserService.name);
+
     constructor(
         private readonly prisma: DatabaseService,
         @Inject('RABBITMQ_CLIENT') private readonly client: ClientProxy,
@@ -41,6 +45,7 @@ export class UserService {
             },
             where: { id },
         });
+        this.logger.log(`Banned user ${id}.`);
 
         return {
             success: true,
@@ -82,6 +87,8 @@ export class UserService {
                     },
                 });
             });
+
+            this.logger.log(`User ${blockerId} blocked user ${targetUserId}.`);
 
             return {
                 success: true,
@@ -156,6 +163,8 @@ export class UserService {
             where: { followerId_followingId: { followerId, followingId } },
         });
 
+        this.logger.log(`User ${followerId} followed user ${followingId}.`);
+
         return {
             success: true,
             message: 'Now following the user.',
@@ -164,7 +173,6 @@ export class UserService {
         };
     }
 
-    // DONE
     async getUserDetails(userId: string): Promise<PublicUserDto> {
         const user = await this.prisma.user.findUnique({
             select: {
@@ -193,7 +201,7 @@ export class UserService {
         };
     }
 
-    // no pagination
+    // add pagination
     async getUserFollowees(userId: string): Promise<PublicUserDto[]> {
         const follows = await this.prisma.follow.findMany({
             include: {
@@ -228,7 +236,7 @@ export class UserService {
         }));
     }
 
-    // no pagination
+    // add pagination
     async getUserFollowers(userId: string): Promise<PublicUserDto[]> {
         const follows = await this.prisma.follow.findMany({
             include: {
@@ -276,7 +284,6 @@ export class UserService {
         }
     }
 
-    // DONE
     async isUserBanned(userId: string): Promise<IsUserBannedResponse> {
         const user = await this.prisma.user.findUnique({
             select: { bannedUntil: true, isBanned: true },
@@ -297,7 +304,6 @@ export class UserService {
 
         return { isBanned: user.bannedUntil > new Date() };
     }
-
 
     async softDeleteUser(userId: string): Promise<PublicUserDto> {
         const user = await this.prisma.user.findUnique({
@@ -321,6 +327,7 @@ export class UserService {
             },
             where: { id: userId },
         });
+        this.logger.log(`User ${userId} was set to be soft-deleted.`);
 
         return {
             id: updated.id,
@@ -364,11 +371,11 @@ export class UserService {
             where: { id },
         });
 
+        this.logger.log(`User ${id} got unbanned.`);
+
         return { success: true, message: 'User unbanned.', userId: id };
     }
 
-
-    // DONE, blockedId kind of unnecessary
     async unblockUser(blockerId: string, blockedId: string): Promise<UnblockUserResponse> {
         const res = await this.prisma.userBlock.deleteMany({
             where: { blockedId, blockerId },
@@ -377,6 +384,8 @@ export class UserService {
         if (res.count === 0) {
             throw new NotFoundException('Block not found.');
         }
+
+        this.logger.log(`User ${blockerId} unblocked user ${blockedId}.`);
 
         return {
             success: true,
@@ -406,6 +415,8 @@ export class UserService {
         if (res.count === 0) {
             throw new NotFoundException('Follow relationship not found.');
         }
+
+        this.logger.log(`User ${followerId} unfollowed user ${followingId}.`);
 
         return {
             success: true,
@@ -440,6 +451,8 @@ export class UserService {
                 },
                 where: { id: userId },
             });
+
+            this.logger.log(`User ${userId} updated his details.`);
 
             return {
                 id: updated.id,
