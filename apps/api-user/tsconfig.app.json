@@ -16,7 +16,8 @@
             "@/*": [
                 "src/*"
             ],
-            "@core/*": ["src/core/*"]
+            "@core/*": ["src/core/*"],
+            "packages/*":["../../packages/*"]
         }
     },
     "exclude": [
