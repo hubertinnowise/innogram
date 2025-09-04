@@ -15,8 +15,9 @@ import { BanUserDto } from './dto/ban-user.dto';
 import { BanUserResponse, BlockUserResponse, FollowUserResponse, UnbanUserResponse, UnblockUserResponse, UnfollowUserResponse } from './responses';
 import { ListUsersResponse } from './responses/list-user.response';
 import { IsUserBannedResponse } from './responses/is-user-banned.response';
-import { Prisma } from '@prisma/client';
 import { UpdateUserResponse } from './responses/update-user.response';
+import { isPrismaKnownError } from '@/core/errors/is-prisma-known-error';
+import { PrismaErrorCode } from '@/core/enums /prisma-error-code.enum';
 
 
 @Injectable()
@@ -96,8 +97,12 @@ export class UserService {
                 blockerId: blockerId,
                 blockedId: targetUserId,
             };
-        } catch (e: any) { // change to prisma error
-            if (e?.code === 'P2003') throw new NotFoundException('User not found');
+        } catch (e: unknown) {
+            if (isPrismaKnownError(e)) {
+                if (e.code === PrismaErrorCode.ForeignKeyConstraintFailed) {
+                    throw new NotFoundException('User not found');
+                }
+            }
             throw e;
         }
     }
@@ -452,7 +457,7 @@ export class UserService {
                 where: { id: userId },
             });
 
-            this.logger.log(`User ${userId} updated his details.`);
+            this.logger.log(`User ${userId} updated details.`);
 
             return {
                 id: updated.id,
@@ -464,10 +469,14 @@ export class UserService {
                 followersCount: updated._count.followers,
                 followingCount: updated._count.following,
             };
-        } catch (e) {
-            const err = e as Prisma.PrismaClientKnownRequestError;
-            if (err.code === 'P2002') {
-                throw new ConflictException('Email, username, or phone already in use.');
+        } catch (e: unknown) {
+            if (isPrismaKnownError(e)) {
+                if (e.code === PrismaErrorCode.UniqueConstraintFailed) {
+                    throw new ConflictException('Email, username, or phone already in use.');
+                }
+                if (e.code === PrismaErrorCode.RecordNotFound) {
+                    throw new NotFoundException('User not found');
+                }
             }
             throw e;
         }
