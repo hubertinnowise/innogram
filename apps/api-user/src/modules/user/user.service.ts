@@ -14,6 +14,8 @@ import { BanUserDto } from './dto/ban-user.dto';
 import { BanUserResponse, BlockUserResponse, FollowUserResponse, UnbanUserResponse, UnblockUserResponse, UnfollowUserResponse } from './responses';
 import { ListUsersResponse } from './responses/list-user.response';
 import { IsUserBannedResponse } from './responses/is-user-banned.response';
+import { Prisma } from '@prisma/client';
+import { UpdateUserResponse } from './responses/update-user.response';
 
 @Injectable()
 export class UserService {
@@ -392,8 +394,7 @@ export class UserService {
         };
     }
 
-    // update by typed responses
-    async updateUser(userId: string, dto: UpdateUserDto) {
+    async updateUser(userId: string, dto: UpdateUserDto): Promise<UpdateUserResponse> {
         const exists = await this.prisma.user.findUnique({
             select: { id: true },
             where: { id: userId },
@@ -420,17 +421,18 @@ export class UserService {
             });
 
             return {
+                id: updated.id,
+                email: updated.email,
+                username: updated.username,
+                phoneNumber: updated.phoneNumber,
                 bio: updated.bio ?? undefined,
                 createdAt: updated.createdAt,
-                email: updated.email,
                 followersCount: updated._count.followers,
                 followingCount: updated._count.following,
-                id: updated.id,
-                phoneNumber: updated.phoneNumber,
-                username: updated.username,
             };
-        } catch (e: any) {
-            if (e.code === 'P2002') {
+        } catch (e) {
+            const err = e as Prisma.PrismaClientKnownRequestError;
+            if (err.code === 'P2002') {
                 throw new ConflictException('Email, username, or phone already in use.');
             }
             throw e;
