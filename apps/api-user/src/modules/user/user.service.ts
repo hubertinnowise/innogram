@@ -24,7 +24,6 @@ export class UserService {
         @Inject('RABBITMQ_CLIENT') private readonly client: ClientProxy,
     ) { }
 
-    // DONE
     async banUser(id: string, dto: BanUserDto, adminId: string): Promise<BanUserResponse> {
         const user = await this.prisma.user.findUnique({
             select: { id: true },
@@ -46,15 +45,13 @@ export class UserService {
         return {
             success: true,
             message: 'User banned.',
-            adminId,
+            adminId: adminId,
             userId: id,
         };
     }
 
-    // DONE
     async blockUser(targetUserId: string, blockerId: string): Promise<BlockUserResponse> {
         if (blockerId === targetUserId) {
-            // Defense in depth (even if NotSelfGuard is used)
             throw new BadRequestException('You cannot block yourself');
         }
 
@@ -75,7 +72,7 @@ export class UserService {
                     where: { blockerId_blockedId: { blockedId: targetUserId, blockerId } }, // @@unique([blockerId, blockedId])
                 });
 
-                // Break any follow relationships in either direction
+                // break any follow relationships in either direction
                 await tx.follow.deleteMany({
                     where: {
                         OR: [
@@ -89,17 +86,16 @@ export class UserService {
             return {
                 success: true,
                 message: 'User blocked.',
-                blockerId,
+                blockerId: blockerId,
                 blockedId: targetUserId,
             };
-        } catch (e: any) {
-            // Keep as-is per your request (no Prisma helper changes yet)
+        } catch (e: any) { // change to prisma error
             if (e?.code === 'P2003') throw new NotFoundException('User not found');
             throw e;
         }
     }
 
-    // pagination
+    // add pagination
     async findAll(): Promise<ListUsersResponse> {
         const users = await this.prisma.user.findMany({
             orderBy: { createdAt: 'desc' },
@@ -126,7 +122,6 @@ export class UserService {
         return { items, count: items.length };
     }
 
-    // DONE
     async followUser(followerId: string, followingId: string): Promise<FollowUserResponse> {
         if (followerId === followingId) {
             throw new BadRequestException('You cannot follow yourself.');
@@ -164,7 +159,7 @@ export class UserService {
         return {
             success: true,
             message: 'Now following the user.',
-            followerId,
+            followerId: followerId,
             targetUserId: followingId,
         };
     }
@@ -304,13 +299,40 @@ export class UserService {
     }
 
 
-    // this is complicated, leave for now
-    async softDeleteUser(): Promise<PublicUserDto> {
-        //dla usera i admina, jak snapchat
-        return;
+    async softDeleteUser(userId: string): Promise<PublicUserDto> {
+        const user = await this.prisma.user.findUnique({
+            select: { id: true, deletedAt: true },
+            where: { id: userId },
+        });
+        if (!user) throw new NotFoundException('User not found');
+
+        const updated = await this.prisma.user.update({
+            data: {
+                deletedAt: user.deletedAt ?? new Date(), // idempotent
+            },
+            select: {
+                _count: { select: { followers: true, following: true } },
+                bio: true,
+                createdAt: true,
+                email: true,
+                id: true,
+                phoneNumber: true,
+                username: true,
+            },
+            where: { id: userId },
+        });
+
+        return {
+            id: updated.id,
+            email: updated.email,
+            username: updated.username,
+            bio: updated.bio ?? undefined,
+            createdAt: updated.createdAt,
+            followersCount: updated._count.followers,
+            followingCount: updated._count.following,
+        };
     }
 
-    // DONE
     async unbanUser(id: string): Promise<UnbanUserResponse> {
         const user = await this.prisma.user.findUnique({
             select: {
@@ -364,7 +386,6 @@ export class UserService {
         };
     }
 
-    // DONE
     async unfollowUser(followerId: string, followingId: string): Promise<UnfollowUserResponse> {
         if (followerId === followingId) {
             throw new BadRequestException('You cannot unfollow yourself.');
