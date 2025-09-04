@@ -4,14 +4,13 @@ import {
   ApiTags,
   ApiOkResponse,
   ApiCreatedResponse,
-  ApiNoContentResponse,
 } from '@nestjs/swagger';
 
 import { JwtAuthGuard } from 'packages/jwt-auth.guard';
 
-import { AdminGuard } from '../../core/guards/admin-guard';
-import { NotSelfGuard } from '../../core/guards/not-self-guard';
-import { SelfGuard } from '../../core/guards/self-guard';
+import { AdminGuard } from '@core/guards/admin-guard';
+import { NotSelfGuard } from '@core/guards/not-self-guard';
+import { SelfGuard } from '@core/guards/self-guard';
 import { PublicUserDto, UpdateUserDto } from './dto';
 import { BanUserDto } from './dto/ban-user.dto';
 import { UserService } from './user.service';
