@@ -5,7 +5,7 @@ import * as bcrypt from 'bcrypt';
 import { addMinutes } from 'date-fns';
 import { v4 as uuidv4 } from 'uuid';
 
-import { DatabaseService } from '../../core/database/database.service';
+import { DatabaseService } from '@core/database/database.service';
 import { LoginDto, RegisterDto } from './dto';
 
 import {

@@ -2,7 +2,7 @@ import { Module } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 
-import { DatabaseService } from '../../core/database/database.service';
+import { DatabaseService } from '@core/database/database.service';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 
