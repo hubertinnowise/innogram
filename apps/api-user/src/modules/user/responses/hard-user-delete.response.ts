@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 
-export class HardDeleteUserResponse {
+export class HardUserDeleteResponse {
   @ApiProperty({ example: true })
   success: boolean;
 

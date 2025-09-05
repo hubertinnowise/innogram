@@ -12,13 +12,12 @@ import { ClientProxy } from '@nestjs/microservices';
 import { DatabaseService } from '@core/database/database.service';
 import { PublicUserDto, UpdateUserDto } from './dto';
 import { BanUserDto } from './dto/ban-user.dto';
-import { BanUserResponse, BlockUserResponse, FollowUserResponse, UnbanUserResponse, UnblockUserResponse, UnfollowUserResponse } from './responses';
+import { BanUserResponse, BlockUserResponse, FollowUserResponse, HardUserDeleteResponse, UnbanUserResponse, UnblockUserResponse, UnfollowUserResponse } from './responses';
 import { ListUsersResponse } from './responses/list-user.response';
 import { IsUserBannedResponse } from './responses/is-user-banned.response';
 import { UpdateUserResponse } from './responses/update-user.response';
 import { isPrismaKnownError } from '@/core/errors/is-prisma-known-error';
 import { PrismaErrorCode } from '@/core/enums /prisma-error-code.enum';
-
 
 @Injectable()
 export class UserService {
@@ -115,7 +114,6 @@ export class UserService {
                 _count: { select: { followers: true, following: true } },
                 bio: true,
                 createdAt: true,
-                email: true,
                 id: true,
                 username: true,
             },
@@ -124,7 +122,6 @@ export class UserService {
         const items = users.map((u) => ({
             bio: u.bio ?? undefined,
             createdAt: u.createdAt,
-            email: u.email,
             followersCount: u._count.followers,
             followingCount: u._count.following,
             id: u.id,
@@ -184,7 +181,7 @@ export class UserService {
                 _count: { select: { followers: true, following: true } },
                 bio: true,
                 createdAt: true,
-                email: true,
+                email: true, // keep only if public
                 id: true,
                 username: true,
             },
@@ -198,7 +195,6 @@ export class UserService {
         return {
             bio: user.bio ?? undefined,
             createdAt: user.createdAt,
-            email: user.email,
             followersCount: user._count.followers,
             followingCount: user._count.following,
             id: user.id,
@@ -220,7 +216,6 @@ export class UserService {
                         },
                         bio: true,
                         createdAt: true,
-                        email: true, // keep only if safe to expose
                         id: true,
                         username: true,
                     },
@@ -233,7 +228,6 @@ export class UserService {
         return follows.map((f) => ({
             bio: f.following.bio ?? undefined,
             createdAt: f.following.createdAt,
-            email: f.following.email,
             followersCount: f.following._count.followers,
             followingCount: f.following._count.following,
             id: f.following.id,
@@ -268,7 +262,6 @@ export class UserService {
         return follows.map((f) => ({
             bio: f.follower.bio ?? undefined,
             createdAt: f.follower.createdAt,
-            email: f.follower.email,
             followersCount: f.follower._count.followers,
             followingCount: f.follower._count.following,
             id: f.follower.id,
@@ -276,9 +269,7 @@ export class UserService {
         }));
     }
 
-    // pay attention to related records while deleting, same with soft delete
-    // add typed response
-    async hardDeleteUser(userId: string): Promise<void> {
+    async hardDeleteUser(userId: string): Promise<HardUserDeleteResponse> {
         const exists = await this.prisma.user.findUnique({
             select: { id: true },
             where: { id: userId },
@@ -287,6 +278,17 @@ export class UserService {
         if (!exists) {
             throw new NotFoundException('User not found');
         }
+
+        // cascading deletion set in prisma schema
+        await this.prisma.user.delete({
+            where: { id: userId },
+        });
+
+        return {
+            success: true,
+            message: 'User deleted.',
+            userId,
+        };
     }
 
     async isUserBanned(userId: string): Promise<IsUserBannedResponse> {
@@ -325,7 +327,7 @@ export class UserService {
                 _count: { select: { followers: true, following: true } },
                 bio: true,
                 createdAt: true,
-                email: true,
+                email: true, // keep only if public
                 id: true,
                 phoneNumber: true,
                 username: true,
@@ -336,7 +338,6 @@ export class UserService {
 
         return {
             id: updated.id,
-            email: updated.email,
             username: updated.username,
             bio: updated.bio ?? undefined,
             createdAt: updated.createdAt,

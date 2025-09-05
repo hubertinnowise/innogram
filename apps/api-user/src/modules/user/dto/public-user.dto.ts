@@ -11,9 +11,6 @@ export class PublicUserDto {
     @IsDate()
     createdAt!: Date;
 
-    @IsEmail()
-    email!: string;
-
     @IsInt()
     @Min(0)
     followersCount!: number;
