@@ -5,7 +5,18 @@
         "module": "commonjs",
         "types": ["node"],
         "emitDecoratorMetadata": true,
-        "target": "es2021"
+        "target": "es2021",
+        "skipLibCheck": true,
+        "allowSyntheticDefaultImports": true,
+        "esModuleInterop": true,
+        "baseUrl": ".",
+        "paths": {
+            "@/*": [
+                "src/*"
+            ],
+            "@core/*": ["src/core/*"],
+            "packages/*":["../../packages/*"]
+        }
     },
     "exclude": ["jest.config.ts", "src/**/*.spec.ts", "src/**/*.test.ts"],
     "include": ["src/**/*.ts"]
