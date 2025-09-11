@@ -11,6 +11,8 @@ import { PublicPostMediaDto } from "./dto/public-post-media.dto";
 import { PostMediaType } from '@prisma/client';
 import { GetPostCommentsResponse } from "./responses/get-post-comments.response";
 import { RemoveCommentReplyResponse } from "./responses/remove-comment-reply.response";
+import { PostCommentReplyDto } from "./dto/post-comment-reply.dto";
+import { GetPostCommentRepliesResponse } from "./responses/get-post-comment-replies.response";
 
 @Injectable()
 export class PostService {
@@ -576,6 +578,54 @@ export class PostService {
             repliesCount,
         };
     }
+
+    async getPostCommentReplies(postId: string, commentId: string,): Promise<GetPostCommentRepliesResponse> {
+        const comment = await this.prisma.comment.findUnique({
+            where: { id: commentId },
+            select: {
+                id: true,
+                postId: true,
+                post: { select: { id: true, deletedAt: true } },
+            },
+        });
+
+        if (!comment || comment.postId !== postId || comment.post.deletedAt) {
+            return { success: false, postId, commentId, total: 0, replies: [] };
+        }
+
+        const replies = await this.prisma.commentReply.findMany({
+            where: { commentId },
+            orderBy: { createdAt: 'desc' },
+            select: {
+                id: true,
+                commentId: true,
+                authorId: true,
+                content: true,
+                createdAt: true,
+                updatedAt: true,
+                _count: { select: { likes: true } }, // relation name is `likes` on CommentReply
+            },
+        });
+
+        const dtoList: PostCommentReplyDto[] = replies.map((r) => ({
+            id: r.id,
+            commentId: r.commentId,
+            authorId: r.authorId,
+            content: r.content,
+            likesCount: r._count.likes,
+            createdAt: r.createdAt,
+            updatedAt: r.updatedAt,
+        }));
+
+        return {
+            success: true,
+            postId,
+            commentId,
+            total: dtoList.length,
+            replies: dtoList,
+        };
+    }
+
 }
 
 /*
