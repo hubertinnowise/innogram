@@ -13,6 +13,10 @@ import { GetPostCommentsResponse } from "./responses/get-post-comments.response"
 import { RemoveCommentReplyResponse } from "./responses/remove-comment-reply.response";
 import { PostCommentReplyDto } from "./dto/post-comment-reply.dto";
 import { GetPostCommentRepliesResponse } from "./responses/get-post-comment-replies.response";
+import { PublicUserLiteDto } from "./dto/public-user-lite.dto";
+import { GetCommentLikesResponse } from "./responses/get-comment-likes.response";
+import { GetPostLikesResponse } from "./responses/get-post-likes.response";
+import { GetCommentReplyLikesResponse } from "./responses/get-comment-reply-likes.response";
 
 @Injectable()
 export class PostService {
@@ -307,11 +311,12 @@ export class PostService {
         return { success: true, post: dto };
     }
 
-    // SelfGuard   
+    // SelfGuard, dto 
     async editPost(postId: string, userId: string, dto: EditPostDto): Promise<EditPostResponse> {
         return;
     }
 
+    // dto
     async createPost(authordId: string, dto: CreatePostDto): Promise<CreatePostResponse> {
         return;
     }
@@ -471,7 +476,7 @@ export class PostService {
         };
     }
 
-    // addCommentReply
+    // addCommentReply, dto
 
     async getPostComments(postId: string): Promise<GetPostCommentsResponse> {
         const post = await this.prisma.post.findUnique({
@@ -514,9 +519,69 @@ export class PostService {
         };
     }
 
-    // getPostLikes, lista userow ktorzy polubili post
-    // getCommentLikes 
-    // getCommentReplyLikes
+    //DONE, pagination
+    async getPostLikes(postId: string): Promise<GetPostLikesResponse> {
+        // Optional friendly check
+        const post = await this.prisma.post.findUnique({
+            where: { id: postId },
+            select: { id: true, deletedAt: true },
+        });
+        if (!post || post.deletedAt) {
+            return { success: false, postId, total: 0, users: [] };
+        }
+
+        const likes = await this.prisma.postLike.findMany({
+            where: { postId },
+            select: { user: { select: { id: true } } },
+            // orderBy: { createdAt: 'desc' }, // uncomment if PostLike has createdAt
+        });
+
+        const users: PublicUserLiteDto[] = likes.map(l => ({ id: l.user.id }));
+
+        return { success: true, postId, total: users.length, users };
+    }
+
+    // DONE, pagination
+    async getCommentLikes(commentId: string): Promise<GetCommentLikesResponse> {
+        const comment = await this.prisma.comment.findUnique({
+            where: { id: commentId },
+            select: { id: true },
+        });
+        if (!comment) {
+            return { success: false, commentId, total: 0, users: [] };
+        }
+
+        const likes = await this.prisma.commentLike.findMany({
+            where: { commentId },
+            select: { user: { select: { id: true } } },
+            // orderBy: { createdAt: 'desc' }, // you have createdAt on CommentLike
+        });
+
+        const users: PublicUserLiteDto[] = likes.map(l => ({ id: l.user.id }));
+
+        return { success: true, commentId, total: users.length, users };
+    }
+
+    //DONE, pagination
+    async getCommentReplyLikes(replyId: string): Promise<GetCommentReplyLikesResponse> {
+        const reply = await this.prisma.commentReply.findUnique({
+            where: { id: replyId },
+            select: { id: true },
+        });
+        if (!reply) {
+            return { success: false, replyId, total: 0, users: [] };
+        }
+
+        const likes = await this.prisma.commentReplyLike.findMany({
+            where: { replyId },
+            select: { user: { select: { id: true } } },
+            orderBy: { createdAt: 'desc' },
+        });
+
+        const users: PublicUserLiteDto[] = likes.map(l => ({ id: l.user.id }));
+
+        return { success: true, replyId, total: users.length, users };
+    }
 
     // DONE, self guard jaki albo co
     async removeCommentReply(
@@ -579,6 +644,7 @@ export class PostService {
         };
     }
 
+    // DONE
     async getPostCommentReplies(postId: string, commentId: string,): Promise<GetPostCommentRepliesResponse> {
         const comment = await this.prisma.comment.findUnique({
             where: { id: commentId },
@@ -625,7 +691,6 @@ export class PostService {
             replies: dtoList,
         };
     }
-
 }
 
 /*
