@@ -3,6 +3,10 @@ import { CommentPostResponse, CreatePostResponse, EditPostResponse, GetPostRespo
 import { CommentPostDto, CreatePostDto, EditPostDto, PublicPostDto } from "./dto";
 import { DatabaseService } from "@/core/database/database.service";
 import { UserFeedResponse } from "./responses/user-feed-response";
+import { UnlikeCommentReplyResponse } from "./responses/unlike-comment-reply.response";
+import { LikeCommentReplyResponse } from "./responses/like-comment-reply.response";
+import { UnlikeCommentResponse } from "./responses/unlike-comment.response";
+import { LikeCommentResponse } from "./responses/like-comment.response";
 
 @Injectable()
 export class PostService {
@@ -130,7 +134,7 @@ export class PostService {
     }
 
     // SelfGuard, try catch PrismaError handling
-    //
+    //DONE
     async removePostComment(postId: string, commentId: string, userId: string,): Promise<RemovePostCommentResponse> {
         const comment = await this.prisma.comment.findUnique({
             where: { id: commentId },
@@ -232,7 +236,7 @@ export class PostService {
         return { success: true, post: dto };
     }
 
-    //tutaj tez guard ze tylko autor moze edytowac
+    // SelfGuard   
     async editPost(postId: string, userId: string, dto: EditPostDto): Promise<EditPostResponse> {
         return;
     }
@@ -248,6 +252,129 @@ export class PostService {
 
     // getPostComments
     // getPostLikes, lista userow ktorzy polubili post
+
+    // getCommentLikes 
+    // getPostCommentReplies
+
+    async likeComment(commentId: string, userId: string): Promise<LikeCommentResponse> {
+        const comment = await this.prisma.comment.findUnique({
+            where: { id: commentId },
+            select: { id: true },
+        });
+        if (!comment) {
+            return { success: false, message: 'Comment not found.', commentId, userId, likesCount: 0 };
+        }
+
+        const { likesCount, createdNew } = await this.prisma.$transaction(async (tx) => {
+            const existing = await tx.commentLike.findUnique({
+                where: { userId_commentId: { userId, commentId } },
+                select: { userId: true },
+            });
+
+            await tx.commentLike.upsert({
+                where: { userId_commentId: { userId, commentId } },
+                update: {}, // idempotent
+                create: { userId, commentId },
+            });
+
+            const likesCount = await tx.commentLike.count({ where: { commentId } });
+            return { likesCount, createdNew: !existing };
+        });
+
+        return {
+            success: true,
+            message: createdNew ? 'Comment liked.' : 'Comment already liked.',
+            commentId,
+            userId,
+            likesCount,
+        };
+    }
+
+    async unlikeComment(commentId: string, userId: string): Promise<UnlikeCommentResponse> {
+        const comment = await this.prisma.comment.findUnique({
+            where: { id: commentId },
+            select: { id: true },
+        });
+        if (!comment) {
+            return { success: false, message: 'Comment not found.', commentId, userId, likesCount: 0 };
+        }
+
+        const { removed, likesCount } = await this.prisma.$transaction(async (tx) => {
+            const res = await tx.commentLike.deleteMany({ where: { commentId, userId } });
+            const likesCount = await tx.commentLike.count({ where: { commentId } });
+            return { removed: res.count > 0, likesCount };
+        });
+
+        return {
+            success: true,
+            message: removed ? 'Comment unliked.' : 'Comment was not liked.',
+            commentId,
+            userId,
+            likesCount,
+        };
+    }
+
+    async likeCommentReply(replyId: string, userId: string): Promise<LikeCommentReplyResponse> {
+        const reply = await this.prisma.commentReply.findUnique({
+            where: { id: replyId },
+            select: { id: true },
+        });
+        if (!reply) {
+            return { success: false, message: 'Reply not found.', replyId, userId, likesCount: 0 };
+        }
+
+        const { likesCount, createdNew } = await this.prisma.$transaction(async (tx) => {
+            const existing = await tx.commentReplyLike.findUnique({
+                where: { userId_replyId: { userId, replyId } },
+                select: { userId: true },
+            });
+
+            await tx.commentReplyLike.upsert({
+                where: { userId_replyId: { userId, replyId } },
+                update: {},
+                create: { userId, replyId },
+            });
+
+            const likesCount = await tx.commentReplyLike.count({ where: { replyId } });
+            return { likesCount, createdNew: !existing };
+        });
+
+        return {
+            success: true,
+            message: createdNew ? 'Reply liked.' : 'Reply already liked.',
+            replyId,
+            userId,
+            likesCount,
+        };
+    }
+
+    async unlikeCommentReply(replyId: string, userId: string): Promise<UnlikeCommentReplyResponse> {
+        const reply = await this.prisma.commentReply.findUnique({
+            where: { id: replyId },
+            select: { id: true },
+        });
+        if (!reply) {
+            return { success: false, message: 'Reply not found.', replyId, userId, likesCount: 0 };
+        }
+
+        const { removed, likesCount } = await this.prisma.$transaction(async (tx) => {
+            const res = await tx.commentReplyLike.deleteMany({ where: { replyId, userId } });
+            const likesCount = await tx.commentReplyLike.count({ where: { replyId } });
+            return { removed: res.count > 0, likesCount };
+        });
+
+        return {
+            success: true,
+            message: removed ? 'Reply unliked.' : 'Reply was not liked.',
+            replyId,
+            userId,
+            likesCount,
+        };
+    }
+
+    // getCommentReplyLikes
+    // removeCommentReply 
+    // addCommentReply
 }
 
 /*
