@@ -311,8 +311,43 @@ export class PostService {
 
     // SelfGuard dto moze
     async removePost(postId: string, userId: string): Promise<RemovePostResponse> {
-        return;
+        const post = await this.prisma.post.findUnique({
+            where: { id: postId },
+            select: { id: true, authorId: true, deletedAt: true },
+        });
+
+        if (!post) {
+            return { success: false, message: 'Post not found.' };
+        }
+        if (post.deletedAt) {
+            return {
+                success: false,
+                message: 'Post already removed.',
+                postId,
+                userId,
+                deletedAt: post.deletedAt,
+            };
+        }
+        // guard, check autorstwa w kontrollerze
+        // if (post.authorId !== userId) {
+        //     return { success: false, message: 'Not authorized to remove this post.' };
+        // }
+
+        const now = new Date();
+        await this.prisma.post.update({
+            where: { id: postId },
+            data: { deletedAt: now },
+        });
+
+        return {
+            success: true,
+            message: 'Post removed.',
+            postId,
+            userId,
+            deletedAt: now,
+        };
     }
+
 
     async createPost(authordId: string, dto: CreatePostDto): Promise<CreatePostResponse> {
         return;
@@ -452,7 +487,7 @@ export class PostService {
             where: {
                 postId,
             },
-            orderBy: { createdAt: 'desc' }, 
+            orderBy: { createdAt: 'desc' },
             select: {
                 id: true,
                 authorId: true,
@@ -479,7 +514,7 @@ export class PostService {
             comments: dtoList,
         };
     }
-    
+
     // getPostLikes, lista userow ktorzy polubili post
     // getCommentLikes 
     // getPostCommentReplies
