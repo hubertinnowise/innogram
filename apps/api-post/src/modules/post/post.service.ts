@@ -1,12 +1,15 @@
 import { Injectable, Logger, NotFoundException } from "@nestjs/common"
 import { CommentPostResponse, CreatePostResponse, EditPostResponse, GetPostResponse, LikePostResponse, RemovePostCommentResponse, RemovePostResponse, UnlikePostResponse, UserPostResponse } from "./responses";
-import { CommentPostDto, CreatePostDto, EditPostDto, PublicPostDto } from "./dto";
+import { CommentPostDto, CreatePostDto, EditPostDto, PostCommentDto, PublicPostDto } from "./dto";
 import { DatabaseService } from "@/core/database/database.service";
 import { UserFeedResponse } from "./responses/user-feed-response";
 import { UnlikeCommentReplyResponse } from "./responses/unlike-comment-reply.response";
 import { LikeCommentReplyResponse } from "./responses/like-comment-reply.response";
 import { UnlikeCommentResponse } from "./responses/unlike-comment.response";
 import { LikeCommentResponse } from "./responses/like-comment.response";
+import { PublicPostMediaDto } from "./dto/public-post-media.dto";
+import { PostMediaType } from '@prisma/client';
+import { GetPostCommentsResponse } from "./responses/get-post-comments.response";
 
 @Injectable()
 export class PostService {
@@ -176,9 +179,74 @@ export class PostService {
         return;
     }
 
-    // lista postow autorstwa userId, paginacja
+    // DONE, pagination
     async getUserPosts(userId: string): Promise<UserPostResponse> {
-        return;
+        const user = await this.prisma.user.findUnique({
+            where: { id: userId },
+            select: { id: true },
+        });
+        if (!user) {
+            return {
+                success: false,
+                userId,
+                total: 0,
+                posts: [],
+            } as UserPostResponse;
+        }
+
+        const posts = await this.prisma.post.findMany({
+            where: { authorId: userId, deletedAt: null },
+            orderBy: { createdAt: 'desc' },
+            select: {
+                id: true,
+                authorId: true,
+                content: true,
+                createdAt: true,
+                updatedAt: true,
+                media: {
+                    select: {
+                        id: true,
+                        type: true,
+                        url: true,
+                        position: true,
+                        width: true,
+                        height: true,
+                        durationMs: true,
+                    },
+                    orderBy: { position: 'asc' },
+                },
+                _count: {
+                    select: { likes: true, comments: true },
+                },
+            },
+        });
+
+        const dtoList: PublicPostDto[] = posts.map((p) => ({
+            id: p.id,
+            authorId: p.authorId,
+            content: p.content,
+            media: p.media.map<PublicPostMediaDto>((m) => ({
+                id: m.id,
+                // m.type is PostMediaType; cast to the DTO union (identical literal values)
+                type: m.type as unknown as PublicPostMediaDto['type'],
+                url: m.url ?? undefined,
+                position: m.position,
+                width: m.width ?? undefined,
+                height: m.height ?? undefined,
+                durationMs: m.durationMs ?? undefined,
+            })),
+            likesCount: p._count.likes,
+            commentsCount: p._count.comments,
+            createdAt: p.createdAt,
+            updatedAt: p.updatedAt,
+        }));
+
+        return {
+            success: true,
+            userId,
+            total: dtoList.length,
+            posts: dtoList,
+        };
     }
 
     //DONE
@@ -241,20 +309,14 @@ export class PostService {
         return;
     }
 
-    async createPost(authordId: string, dto: CreatePostDto): Promise<CreatePostResponse> {
-        return;
-    }
-
-    // tez guard ze autor moze usuwac, dto moze
+    // SelfGuard dto moze
     async removePost(postId: string, userId: string): Promise<RemovePostResponse> {
         return;
     }
 
-    // getPostComments
-    // getPostLikes, lista userow ktorzy polubili post
-
-    // getCommentLikes 
-    // getPostCommentReplies
+    async createPost(authordId: string, dto: CreatePostDto): Promise<CreatePostResponse> {
+        return;
+    }
 
     async likeComment(commentId: string, userId: string): Promise<LikeCommentResponse> {
         const comment = await this.prisma.comment.findUnique({
@@ -313,6 +375,7 @@ export class PostService {
             likesCount,
         };
     }
+
 
     async likeCommentReply(replyId: string, userId: string): Promise<LikeCommentReplyResponse> {
         const reply = await this.prisma.commentReply.findUnique({
@@ -375,6 +438,51 @@ export class PostService {
     // getCommentReplyLikes
     // removeCommentReply 
     // addCommentReply
+
+    async getPostComments(postId: string): Promise<GetPostCommentsResponse> {
+        const post = await this.prisma.post.findUnique({
+            where: { id: postId },
+            select: { id: true, deletedAt: true },
+        });
+        if (!post || post.deletedAt) {
+            return { success: false, postId, total: 0, comments: [] };
+        }
+
+        const comments = await this.prisma.comment.findMany({
+            where: {
+                postId,
+            },
+            orderBy: { createdAt: 'desc' }, 
+            select: {
+                id: true,
+                authorId: true,
+                content: true,
+                createdAt: true,
+                updatedAt: true,
+                _count: { select: { likes: true } }, // relies on CommentLike relation name `likes`
+            },
+        });
+
+        const dtoList: PostCommentDto[] = comments.map((c) => ({
+            id: c.id,
+            authorId: c.authorId,
+            content: c.content,
+            likesCount: c._count.likes,
+            createdAt: c.createdAt,
+            updatedAt: c.updatedAt,
+        }));
+
+        return {
+            success: true,
+            postId,
+            total: dtoList.length,
+            comments: dtoList,
+        };
+    }
+    
+    // getPostLikes, lista userow ktorzy polubili post
+    // getCommentLikes 
+    // getPostCommentReplies
 }
 
 /*
