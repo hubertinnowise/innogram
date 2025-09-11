@@ -2,6 +2,7 @@ import { Injectable, Logger, NotFoundException } from "@nestjs/common"
 import { CommentPostResponse, CreatePostResponse, EditPostResponse, GetPostResponse, LikePostResponse, RemovePostCommentResponse, RemovePostResponse, UnlikePostResponse, UserPostResponse } from "./responses";
 import { CommentPostDto, CreatePostDto, EditPostDto, PublicPostDto } from "./dto";
 import { DatabaseService } from "@/core/database/database.service";
+import { UserFeedResponse } from "./responses/user-feed-response";
 
 @Injectable()
 export class PostService {
@@ -86,7 +87,8 @@ export class PostService {
         };
     }
 
-    async commentPost(postId: string, dto: CommentPostDto): Promise<CommentPostResponse> {
+    //DONE ew jakis try catch PrismaError handling
+    async commentPost(postId: string, userId: string, dto: CommentPostDto): Promise<CommentPostResponse> {
         const post = await this.prisma.post.findUnique({
             where: { id: postId },
             select: { id: true, deletedAt: true },
@@ -103,17 +105,12 @@ export class PostService {
             throw new Error('User not found.');
         }
 
-        const content = dto.content.trim();
-        if (!content) {
-            throw new Error('Content must not be empty.');
-        }
-
         const { commentId, commentsCount } = await this.prisma.$transaction(async (tx) => {
             const comment = await tx.comment.create({
                 data: {
                     postId,
-                    authorId: dto.userId,
-                    content,
+                    authorId: userId,
+                    content: dto.content.trim(),
                 },
                 select: { id: true },
             });
@@ -126,82 +123,58 @@ export class PostService {
             success: true,
             message: 'Comment added.',
             postId,
-            userId: dto.userId,
+            userId,
             commentId,
             commentsCount,
         };
     }
 
-    // guard ze tylko autor komentarza moze go usuwac
-    async removePostComment(postId: string, commentId: string, authorId: string): Promise<RemovePostCommentResponse> {
-        return;
-    }
-
-    // ze jakis getFeed dla usera posty ktore mu wyswietlic, algorytm, infite scroll ideally
-    // tutaj sa posty  autorstwa usera userId, czy to nie powinno byc w user service?
-    async getUserPosts(userId: string): Promise<UserPostResponse> {
-        const user = await this.prisma.user.findUnique({
-            where: { id: userId },
-            select: { id: true },
-        });
-        if (!user) {
-            throw new NotFoundException('User not found.');
-        }
-
-        const posts = await this.prisma.post.findMany({
-            where: { authorId: userId, deletedAt: null },
-            orderBy: { createdAt: 'desc' },
-            include: {
-                media: {
-                    orderBy: { position: 'asc' },
-                    select: {
-                        id: true,
-                        type: true,
-                        url: true,
-                        bucket: true,
-                        objectKey: true,
-                        position: true,
-                        width: true,
-                        height: true,
-                        durationMs: true,
-                    },
-                },
-                _count: {
-                    select: {
-                        likes: true,
-                        comments: true,
-                    },
-                },
+    // SelfGuard, try catch PrismaError handling
+    //
+    async removePostComment(postId: string, commentId: string, userId: string,): Promise<RemovePostCommentResponse> {
+        const comment = await this.prisma.comment.findUnique({
+            where: { id: commentId },
+            select: {
+                id: true,
+                postId: true,
+                authorId: true,
+                post: { select: { id: true, authorId: true, deletedAt: true } },
             },
         });
 
-        return;
+        if (!comment || comment.postId !== postId) {
+            return { success: false, message: 'Comment not found.' };
+        }
+        if (comment.post.deletedAt) {
+            return { success: false, message: 'Post has been deleted.' };
+        }
 
-        // return {
-        //     success: true,
-        //     userId,
-        //     total: posts.length,
-        //     posts: posts.map((p) => ({
-        //         postId: p.id,
-        //         authorId: p.authorId,
-        //         content: p.content,
-        //         createdAt: p.createdAt,
-        //         updatedAt: p.updatedAt ?? undefined,
-        //         media: p.media.map((m) => ({
-        //             id: m.id,
-        //             type: m.type as any, // align enum to union type
-        //             url: m.url ?? undefined,
-        //             bucket: m.bucket ?? undefined,
-        //             objectKey: m.objectKey ?? undefined,
-        //             position: m.position,
-        //             width: m.width ?? undefined,
-        //             height: m.height ?? undefined,
-        //             durationMs: m.durationMs ?? undefined,
-        //         })),
-        //         likesCount: p._count.likes,
-        //         commentsCount: p._count.comments,
-        //     })),
-        // };
+        const { commentsCount } = await this.prisma.$transaction(async (tx) => {
+            await tx.comment.delete({ where: { id: commentId } });
+            const commentsCount = await tx.comment.count({
+                where: { postId },
+            });
+            return { commentsCount };
+        });
+
+        return {
+            success: true,
+            message: 'Comment removed.',
+            postId,
+            commentId,
+            userId,
+            commentsCount,
+        };
+    }
+
+    // algorytm co wyswieltic userowi zeby sobie scrollowal
+    async getUserFeed(userId: string): Promise<UserFeedResponse> {
+        return;
+    }
+
+    // lista postow autorstwa userId, paginacja
+    async getUserPosts(userId: string): Promise<UserPostResponse> {
+        return;
     }
 
     //DONE
@@ -273,13 +246,11 @@ export class PostService {
         return;
     }
 
-    // getPostComments, czy to jest included jakby w Gecie? 
-    // getPostLikes mogloby zwracac userow ktorzy polubili post, uzyteczne
+    // getPostComments
+    // getPostLikes, lista userow ktorzy polubili post
 }
 
 /*
-    posts with images and text
-
     upload images to server using multer and store them in minio
     likes and comments on posts
     pagination of the post list
