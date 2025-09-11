@@ -10,6 +10,7 @@ import { LikeCommentResponse } from "./responses/like-comment.response";
 import { PublicPostMediaDto } from "./dto/public-post-media.dto";
 import { PostMediaType } from '@prisma/client';
 import { GetPostCommentsResponse } from "./responses/get-post-comments.response";
+import { RemoveCommentReplyResponse } from "./responses/remove-comment-reply.response";
 
 @Injectable()
 export class PostService {
@@ -309,6 +310,10 @@ export class PostService {
         return;
     }
 
+    async createPost(authordId: string, dto: CreatePostDto): Promise<CreatePostResponse> {
+        return;
+    }
+
     // SelfGuard dto moze
     async removePost(postId: string, userId: string): Promise<RemovePostResponse> {
         const post = await this.prisma.post.findUnique({
@@ -346,11 +351,6 @@ export class PostService {
             userId,
             deletedAt: now,
         };
-    }
-
-
-    async createPost(authordId: string, dto: CreatePostDto): Promise<CreatePostResponse> {
-        return;
     }
 
     async likeComment(commentId: string, userId: string): Promise<LikeCommentResponse> {
@@ -411,7 +411,6 @@ export class PostService {
         };
     }
 
-
     async likeCommentReply(replyId: string, userId: string): Promise<LikeCommentReplyResponse> {
         const reply = await this.prisma.commentReply.findUnique({
             where: { id: replyId },
@@ -470,8 +469,6 @@ export class PostService {
         };
     }
 
-    // getCommentReplyLikes
-    // removeCommentReply 
     // addCommentReply
 
     async getPostComments(postId: string): Promise<GetPostCommentsResponse> {
@@ -517,7 +514,68 @@ export class PostService {
 
     // getPostLikes, lista userow ktorzy polubili post
     // getCommentLikes 
-    // getPostCommentReplies
+    // getCommentReplyLikes
+
+    // DONE, self guard jaki albo co
+    async removeCommentReply(
+        postId: string,
+        commentId: string,
+        replyId: string,
+        userId: string,
+    ): Promise<RemoveCommentReplyResponse> {
+        const reply = await this.prisma.commentReply.findUnique({
+            where: { id: replyId },
+            select: {
+                id: true,
+                authorId: true,
+                commentId: true,
+                comment: {
+                    select: {
+                        id: true,
+                        authorId: true,
+                        post: { select: { id: true, authorId: true, deletedAt: true } },
+                    },
+                },
+            },
+        });
+
+        if (!reply || reply.commentId !== commentId || reply.comment.post.id !== postId) {
+            return { success: false, message: 'Reply not found.', postId, commentId, replyId, userId };
+        }
+        if (reply.comment.post.deletedAt) {
+            return { success: false, message: 'Post has been deleted.', postId, commentId, replyId, userId };
+        }
+
+        // w guardzie SelfGuard czy cos
+        // const isReplyAuthor = reply.authorId === userId;
+        // const isCommentAuthor = reply.comment.authorId === userId;
+        // const isPostAuthor = reply.comment.post.authorId === userId;
+
+        // if (!isReplyAuthor && !isCommentAuthor && !isPostAuthor) {
+        //     return { success: false, message: 'Not authorized to remove this reply.', postId, commentId, replyId, userId };
+        // }
+
+        const { repliesCount } = await this.prisma.$transaction(async (tx) => {
+            await tx.commentReply.delete({ where: { id: replyId } });
+            const repliesCount = await tx.commentReply.count({
+                where: {
+                    commentId,
+                },
+            });
+
+            return { repliesCount };
+        });
+
+        return {
+            success: true,
+            message: 'Reply removed.',
+            postId,
+            commentId,
+            replyId,
+            userId,
+            repliesCount,
+        };
+    }
 }
 
 /*
