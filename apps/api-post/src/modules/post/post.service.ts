@@ -1,22 +1,35 @@
-import { Injectable, Logger, NotFoundException } from "@nestjs/common"
-import { CommentPostResponse, CreatePostResponse, EditPostResponse, GetPostResponse, LikePostResponse, RemovePostCommentResponse, RemovePostResponse, UnlikePostResponse, UserPostResponse } from "./responses";
+import { Injectable, Logger } from "@nestjs/common";
+import {
+  CommentPostResponse,
+  CreatePostResponse,
+  EditPostResponse,
+  GetPostResponse,
+  LikePostResponse,
+  RemovePostCommentResponse,
+  RemovePostResponse,
+  UnlikePostResponse,
+  UserFeedResponse,
+  UserPostResponse,
+  LikeCommentResponse,
+  UnlikeCommentResponse,
+  LikeCommentReplyResponse,
+  UnlikeCommentReplyResponse,
+  GetPostCommentsResponse,
+  GetPostCommentRepliesResponse,
+  RemoveCommentReplyResponse,
+  GetPostLikesResponse,
+  GetCommentLikesResponse,
+  GetCommentReplyLikesResponse,
+  AddCommentReplyResponse,
+} from "./responses";
+
 import { CommentPostDto, CreatePostDto, EditPostDto, PostCommentDto, PublicPostDto } from "./dto";
 import { DatabaseService } from "@/core/database/database.service";
-import { UserFeedResponse } from "./responses/user-feed-response";
-import { UnlikeCommentReplyResponse } from "./responses/unlike-comment-reply.response";
-import { LikeCommentReplyResponse } from "./responses/like-comment-reply.response";
-import { UnlikeCommentResponse } from "./responses/unlike-comment.response";
-import { LikeCommentResponse } from "./responses/like-comment.response";
 import { PublicPostMediaDto } from "./dto/public-post-media.dto";
 import { PostMediaType } from '@prisma/client';
-import { GetPostCommentsResponse } from "./responses/get-post-comments.response";
-import { RemoveCommentReplyResponse } from "./responses/remove-comment-reply.response";
 import { PostCommentReplyDto } from "./dto/post-comment-reply.dto";
-import { GetPostCommentRepliesResponse } from "./responses/get-post-comment-replies.response";
 import { PublicUserLiteDto } from "./dto/public-user-lite.dto";
-import { GetCommentLikesResponse } from "./responses/get-comment-likes.response";
-import { GetPostLikesResponse } from "./responses/get-post-likes.response";
-import { GetCommentReplyLikesResponse } from "./responses/get-comment-reply-likes.response";
+import { AddCommentReplyDto } from "./dto/add-comment-reply.dto";
 
 @Injectable()
 export class PostService {
@@ -24,7 +37,6 @@ export class PostService {
 
     constructor(private readonly prisma: DatabaseService) {
         // rabbit client tez
-        // database service dla tego microserviceu 
     }
 
     //DONE
@@ -311,14 +323,162 @@ export class PostService {
         return { success: true, post: dto };
     }
 
-    // SelfGuard, dto 
-    async editPost(postId: string, userId: string, dto: EditPostDto): Promise<EditPostResponse> {
-        return;
+    // TO BE CHECKED SelfGuard, dto 
+    async createPost(authorId: string, dto: CreatePostDto): Promise<CreatePostResponse> {
+        const user = await this.prisma.user.findUnique({ where: { id: authorId }, select: { id: true } });
+        if (!user) throw new Error('User not found.');
+
+        // Inline normalize: sort by provided position (if any), then reindex 0..n and default bucket.
+        const mediaData =
+            dto.media && dto.media.length
+                ? dto.media
+                    .slice()
+                    .sort((a, b) => (a.position ?? Number.MAX_SAFE_INTEGER) - (b.position ?? Number.MAX_SAFE_INTEGER))
+                    .map((m, i) => ({
+                        type: m.type,
+                        bucket: m.bucket ?? 'posts',
+                        objectKey: m.objectKey,
+                        url: m.url,
+                        position: i,
+                        width: m.width,
+                        height: m.height,
+                        durationMs: m.durationMs,
+                    }))
+                : [];
+
+        const created = await this.prisma.post.create({
+            data: {
+                authorId,
+                content: dto.content,
+                media: mediaData.length ? { create: mediaData } : undefined,
+            },
+            select: {
+                id: true,
+                authorId: true,
+                content: true,
+                createdAt: true,
+                updatedAt: true,
+                media: {
+                    select: { id: true, type: true, url: true, position: true, width: true, height: true, durationMs: true },
+                    orderBy: { position: 'asc' },
+                },
+            },
+        });
+
+        const postDto: PublicPostDto = {
+            id: created.id,
+            authorId: created.authorId,
+            content: created.content,
+            media: created.media.map<PublicPostMediaDto>((m) => ({
+                id: m.id,
+                type: m.type as unknown as PublicPostMediaDto['type'],
+                url: m.url ?? undefined,
+                position: m.position,
+                width: m.width ?? undefined,
+                height: m.height ?? undefined,
+                durationMs: m.durationMs ?? undefined,
+            })),
+            likesCount: 0,
+            commentsCount: 0,
+            createdAt: created.createdAt,
+            updatedAt: created.updatedAt,
+        };
+
+        return {
+            success: true,
+            message: 'Post created.',
+            postId: created.id,
+            post: postDto,
+        };
     }
 
-    // dto
-    async createPost(authordId: string, dto: CreatePostDto): Promise<CreatePostResponse> {
-        return;
+    // TO BE CHECKED
+    async editPost(postId: string, userId: string, dto: EditPostDto): Promise<EditPostResponse> {
+        const post = await this.prisma.post.findUnique({
+            where: { id: postId },
+            select: { id: true, authorId: true, deletedAt: true },
+        });
+
+        if (!post) throw new Error('Post not found.');
+        if (post.deletedAt) throw new Error('Post has been deleted.');
+        if (post.authorId !== userId) throw new Error('Not authorized to edit this post.');
+
+        if (dto.media) {
+            // Replace-all semantics for media + optional content update in one TX
+            const mediaData =
+                dto.media.length
+                    ? dto.media
+                        .slice()
+                        .sort((a, b) => (a.position ?? Number.MAX_SAFE_INTEGER) - (b.position ?? Number.MAX_SAFE_INTEGER))
+                        .map((m, i) => ({
+                            postId,
+                            type: m.type,
+                            bucket: m.bucket ?? 'posts',
+                            objectKey: m.objectKey,
+                            url: m.url,
+                            position: i,
+                            width: m.width,
+                            height: m.height,
+                            durationMs: m.durationMs,
+                        }))
+                    : [];
+
+            await this.prisma.$transaction(async (tx) => {
+                if (typeof dto.content === 'string') {
+                    await tx.post.update({ where: { id: postId }, data: { content: dto.content } });
+                }
+                await tx.postMedia.deleteMany({ where: { postId } });
+                if (mediaData.length) {
+                    await tx.postMedia.createMany({ data: mediaData });
+                }
+            });
+        } else if (typeof dto.content === 'string') {
+            await this.prisma.post.update({ where: { id: postId }, data: { content: dto.content } });
+        }
+
+        // Re-fetch with counts for the response
+        const updated = await this.prisma.post.findUnique({
+            where: { id: postId },
+            select: {
+                id: true,
+                authorId: true,
+                content: true,
+                createdAt: true,
+                updatedAt: true,
+                media: {
+                    select: { id: true, type: true, url: true, position: true, width: true, height: true, durationMs: true },
+                    orderBy: { position: 'asc' },
+                },
+                _count: { select: { likes: true, comments: true } },
+            },
+        });
+        if (!updated) throw new Error('Post not found after update.');
+
+        const postDto: PublicPostDto = {
+            id: updated.id,
+            authorId: updated.authorId,
+            content: updated.content,
+            media: updated.media.map<PublicPostMediaDto>((m) => ({
+                id: m.id,
+                type: m.type as unknown as PublicPostMediaDto['type'],
+                url: m.url ?? undefined,
+                position: m.position,
+                width: m.width ?? undefined,
+                height: m.height ?? undefined,
+                durationMs: m.durationMs ?? undefined,
+            })),
+            likesCount: updated._count.likes,
+            commentsCount: updated._count.comments,
+            createdAt: updated.createdAt,
+            updatedAt: updated.updatedAt,
+        };
+
+        return {
+            success: true,
+            message: 'Post updated.',
+            postId,
+            post: postDto,
+        };
     }
 
     // SelfGuard dto moze
@@ -476,8 +636,7 @@ export class PostService {
         };
     }
 
-    // addCommentReply, dto
-
+    // DONE, pagination
     async getPostComments(postId: string): Promise<GetPostCommentsResponse> {
         const post = await this.prisma.post.findUnique({
             where: { id: postId },
@@ -560,6 +719,49 @@ export class PostService {
         const users: PublicUserLiteDto[] = likes.map(l => ({ id: l.user.id }));
 
         return { success: true, commentId, total: users.length, users };
+    }
+
+    // TO BE CHECKED 
+    async addCommentReply(postId: string, commentId: string, userId: string, dto: AddCommentReplyDto): Promise<AddCommentReplyResponse> {
+        const post = await this.prisma.post.findUnique({
+            where: { id: postId },
+            select: { id: true, deletedAt: true },
+        });
+        if (!post || post.deletedAt) {
+            return { success: false, message: 'Post not found or has been deleted.', postId, commentId, userId };
+        }
+
+        const comment = await this.prisma.comment.findUnique({
+            where: { id: commentId },
+            select: { id: true, postId: true },
+        });
+        if (!comment || comment.postId !== postId) {
+            return { success: false, message: 'Comment not found.', postId, commentId, userId };
+        }
+
+        const { replyId, repliesCount } = await this.prisma.$transaction(async (tx) => {
+            const reply = await tx.commentReply.create({
+                data: {
+                    commentId,
+                    authorId: userId,
+                    content: dto.content.trim(),
+                },
+                select: { id: true },
+            });
+
+            const repliesCount = await tx.commentReply.count({ where: { commentId } });
+            return { replyId: reply.id, repliesCount };
+        });
+
+        return {
+            success: true,
+            message: 'Reply added.',
+            postId,
+            commentId,
+            userId,
+            replyId,
+            repliesCount,
+        };
     }
 
     //DONE, pagination
