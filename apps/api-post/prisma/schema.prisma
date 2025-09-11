@@ -27,51 +27,46 @@ model User {
 }
 
 model Post {
-  id              String      @id @default(uuid())
-  authorId        String
-  author          User        @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  id         String      @id @default(uuid())
+  authorId   String
+  author     User        @relation(fields: [authorId], references: [id], onDelete: Cascade)
 
-  content         String      @db.Text
+  content    String      @db.Text
+  media      PostMedia[]
 
-  // keep if you want a single "cover"; otherwise delete after migrating to PostMedia
-  mediaBucket     String?
-  mediaObjectKey  String?
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+  deletedAt  DateTime?
 
-  // NEW: one-to-many media
-  media           PostMedia[]
-
-  createdAt       DateTime    @default(now())
-  updatedAt       DateTime?   @updatedAt
-  deletedAt       DateTime?
-
-  likes           PostLike[]
-  comments        Comment[]
+  likes      PostLike[]
+  comments   Comment[]
 
   @@index([authorId])
   @@index([createdAt])
 }
+
 
 model PostMedia {
   id         String         @id @default(uuid())
   postId     String
   post       Post           @relation(fields: [postId], references: [id], onDelete: Cascade)
 
-  type       PostMediaType  // IMAGE/VIDEO/...
-  bucket     String?        // e.g., "posts"
-  objectKey  String?        // e.g., "2025/09/05/uuid/original.jpg"
-  url        String?        // optional CDN/public URL if you resolve it at write-time
+  type       PostMediaType  
+  bucket     String        
+  objectKey  String        
+  url        String?        
 
-  // useful metadata for rendering
-  position   Int            @default(0)      // ordering within the post (0..n)
+  position   Int            @default(0)
   width      Int?
   height     Int?
-  durationMs Int?                            // for videos/gifs
+  durationMs Int?                      
 
-  createdAt  DateTime       @default(now())
-  updatedAt  DateTime       @updatedAt
-
+  createdAt  DateTime       
+  updatedAt  DateTime       
+  
   @@index([postId])
-  @@index([postId, position])
+  @@unique([bucket, objectKey])
+  @@unique([postId, position])
 }
 
 model PostLike {
