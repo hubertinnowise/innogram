@@ -1,4 +1,5 @@
 import { Body, Controller, Delete, Get, HttpCode, Param, Patch, Post, Req, UseGuards } from "@nestjs/common";
+import { JwtAuthGuard } from 'packages/jwt-auth.guard';
 import {
     ApiCreatedResponse,
     ApiForbiddenResponse,
@@ -10,19 +11,19 @@ import {
 } from '@nestjs/swagger';
 import { PostService } from "./post.service";
 import { CommentPostDto, CreatePostDto, EditPostDto } from "./dto";
-import { AddCommentReplyResponse, CommentPostResponse, CreatePostResponse, EditPostResponse, GetCommentLikesResponse, GetCommentReplyLikesResponse, GetPostCommentRepliesResponse, GetPostCommentsResponse, GetPostLikesResponse, GetPostResponse, LikeCommentReplyResponse, LikeCommentResponse, LikePostResponse, RemoveCommentReplyResponse, RemovePostCommentResponse, RemovePostResponse, UnlikeCommentReplyResponse, UnlikeCommentResponse, UnlikePostResponse } from "./responses";
+import { AddCommentReplyResponse, CommentPostResponse, CreatePostResponse, EditPostResponse, GetCommentLikesResponse, GetCommentReplyLikesResponse, GetPostCommentRepliesResponse, GetPostCommentsResponse, GetPostLikesResponse, GetPostResponse, LikeCommentReplyResponse, LikeCommentResponse, LikePostResponse, RemoveCommentReplyResponse, RemovePostCommentResponse, RemovePostResponse, UnlikeCommentReplyResponse, UnlikeCommentResponse, UnlikePostResponse, UserFeedResponse } from "./responses";
 import { AddCommentReplyDto } from "./dto/add-comment-reply.dto";
 
 @ApiTags('Posts')
 @Controller('posts')
 export class PostController {
-    posts: any;
     constructor(private readonly postService: PostService) { }
 
     // ze tutaj guardy trzeba pododawac wszedzi
     // getUserPosts
 
     @Post(':postId/comments/:commentId/replies/:replyId/like')
+    @UseGuards(JwtAuthGuard)
     @HttpCode(200)
     @ApiOperation({ summary: 'Likes a comment reply.' })
     @ApiParam({ name: 'postId', description: 'Post ID' })
@@ -41,6 +42,7 @@ export class PostController {
     }
 
     @Post(':postId/comments/:commentId/replies/:replyId/unlike')
+    @UseGuards(JwtAuthGuard)
     @HttpCode(200)
     @ApiOperation({ summary: 'Unlikes a comment reply.' })
     @ApiParam({ name: 'postId', description: 'Post ID' })
@@ -59,6 +61,7 @@ export class PostController {
     }
 
     @Post(':postId/comments/:commentId/like')
+    @UseGuards(JwtAuthGuard)
     @HttpCode(200)
     @ApiOperation({ summary: 'Likes a comment.' })
     @ApiParam({ name: 'postId', description: 'Post ID' })
@@ -75,6 +78,7 @@ export class PostController {
     }
 
     @Post(':postId/comments/:commentId/unlike')
+    @UseGuards(JwtAuthGuard)
     @HttpCode(200)
     @ApiOperation({ summary: 'Unlikes a comment.' })
     @ApiParam({ name: 'postId', description: 'Post ID' })
@@ -132,6 +136,7 @@ export class PostController {
     }
 
     @Post(':postId/comments/:commentId/replies')
+    @UseGuards(JwtAuthGuard)
     @ApiOperation({ summary: 'Adds a reply to a comment.' })
     @ApiParam({ name: 'postId', description: 'Post ID' })
     @ApiParam({ name: 'commentId', description: 'Parent comment ID' })
@@ -163,6 +168,7 @@ export class PostController {
     }
 
     @Delete(':postId/comments/:commentId/replies/:replyId')
+    @UseGuards(JwtAuthGuard)
     @HttpCode(200)
     @ApiOperation({ summary: 'Removes a reply from a comment.' })
     @ApiParam({ name: 'postId', description: 'Post ID' })
@@ -196,6 +202,7 @@ export class PostController {
     }
 
     @Post(':id/like')
+    @UseGuards(JwtAuthGuard)
     @HttpCode(200)
     @ApiOperation({ summary: 'Likes the post with :id.' })
     @ApiParam({ name: 'id', description: 'Post ID' })
@@ -203,10 +210,11 @@ export class PostController {
     @ApiNotFoundResponse({ description: 'Post not found' })
     async likePost(@Req() req: any, @Param('id') id: string): Promise<LikePostResponse> {
         const userId: string = req.user.id;
-        return this.postService.likePost(id, req.user.id);
+        return this.postService.likePost(id, userId);
     }
 
     @Post(':id/unlike')
+    @UseGuards(JwtAuthGuard)
     @HttpCode(200)
     @ApiOperation({ summary: 'Unlikes the post with :id.' })
     @ApiParam({ name: 'id', description: 'Post ID' })
@@ -225,67 +233,83 @@ export class PostController {
         return this.postService.getPost(postId);
     }
 
-    // getUserPosts albo getFeed cos takiego
+    @Get('feed')
+    @UseGuards(JwtAuthGuard)
+    @HttpCode(200)
+    @ApiOperation({ summary: 'Get personalized user feed based on likes and follows' })
+    @ApiOkResponse({ description: 'Feed fetched successfully.', type: UserFeedResponse })
+    async getUserFeed(
+        @Req() req: any,
+    ): Promise<UserFeedResponse> {
+        const userId: string = req.user.id;
+        return this.postService.getUserFeed(userId);
+    }
 
     @Post(':postId/comments')
+    @UseGuards(JwtAuthGuard)
     @ApiOperation({ summary: 'Add a comment to a post' })
     @ApiParam({ name: 'postId', description: 'Post ID' })
     @ApiCreatedResponse({ description: 'Comment created', type: CommentPostResponse })
     async commentPost(
+        @Req() req: any,
         @Param('postId') postId: string,
         @Body() dto: CommentPostDto,
     ): Promise<CommentPostResponse> {
-        // check dto for content not empty
-        //TODO
-        return;
-        // return this.postService.commentPost(postId, dto);
+        const userId: string = req.user.id;
+        return this.postService.commentPost(postId, userId, dto);
     }
 
     @Delete(':postId/comments/:commentId')
+    @UseGuards(JwtAuthGuard)
     @ApiOperation({ summary: 'Remove a comment from a post' })
     @ApiParam({ name: 'postId', description: 'Post ID' })
     @ApiParam({ name: 'commentId', description: 'Comment ID' })
     @ApiOkResponse({ description: 'Comment removed', type: RemovePostCommentResponse })
     async removePostComment(
+        @Req() req: any,
         @Param('postId') postId: string,
         @Param('commentId') commentId: string,
     ): Promise<RemovePostCommentResponse> {
-        // user guard jakis 
-        return this.posts.removePostComment(postId, commentId);
+        const userId: string = req.user.id;
+        return this.postService.removePostComment(postId, commentId, userId);
     }
 
     @Post()
+    @UseGuards(JwtAuthGuard)
     @ApiOperation({ summary: 'Create post' })
     @ApiCreatedResponse({ description: 'Created', type: CreatePostResponse })
     async createPost(
-        @Body() dto: CreatePostDto,
         @Req() req: any,
+        @Body() dto: CreatePostDto,
     ): Promise<CreatePostResponse> {
-        return this.posts.createPost(dto);
+        const authorId: string = req.user.id;
+        return this.postService.createPost(authorId, dto);
     }
 
     @Delete(':id')
+    @UseGuards(JwtAuthGuard)
     @ApiOperation({ summary: 'Remove post' })
     @ApiParam({ name: 'id', description: 'Post ID' })
     @ApiOkResponse({ description: 'Removed', type: RemovePostResponse })
     async removePost(
-        @Param('id') postId: string,
         @Req() req: any,
+        @Param('id') postId: string,
     ): Promise<RemovePostResponse> {
         const userId: string = req.user.id;
-        return this.posts.removePost(postId, userId);
+        return this.postService.removePost(postId, userId);
     }
 
     @Patch(':id')
+    @UseGuards(JwtAuthGuard)
     @ApiOperation({ summary: 'Partially update a post' })
     @ApiParam({ name: 'id', description: 'Post ID' })
     @ApiOkResponse({ description: 'Updated', type: EditPostResponse })
     async editPost(
+        @Req() req: any,
         @Param('id') postId: string,
         @Body() dto: EditPostDto,
-        @Req() req: any,
     ): Promise<EditPostResponse> {
         const authorId: string = req.user.id;
-        return this.posts.editPost(postId, authorId, dto);
+        return this.postService.editPost(postId, authorId, dto);
     }
 }

@@ -26,6 +26,8 @@
         "src/**/*.test.ts"
     ],
     "include": [
-        "src/**/*.ts"
+        "src/**/*.ts",
+        "../../packages/utils/**/*.ts",
+        "../../packages/jwt-auth.guard.ts"
     ]
 }

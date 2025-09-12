@@ -77,6 +77,7 @@ export class UserService {
                     where: { blockerId_blockedId: { blockedId: targetUserId, blockerId } }, // @@unique([blockerId, blockedId])
                 });
 
+
                 // break any follow relationships in either direction
                 await tx.follow.deleteMany({
                     where: {
@@ -118,6 +119,7 @@ export class UserService {
                     createdAt: true,
                     id: true,
                     username: true,
+                    
                 },
             }),
             this.prisma.user.count()

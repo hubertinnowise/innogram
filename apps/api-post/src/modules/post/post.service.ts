@@ -1,4 +1,5 @@
-import { Injectable, Logger } from "@nestjs/common";
+import { Injectable, Logger, Inject } from "@nestjs/common";
+import { ClientProxy } from '@nestjs/microservices';
 import {
   CommentPostResponse,
   CreatePostResponse,
@@ -35,9 +36,10 @@ import { AddCommentReplyDto } from "./dto/add-comment-reply.dto";
 export class PostService {
     private readonly logger = new Logger(PostService.name);
 
-    constructor(private readonly prisma: DatabaseService) {
-        // rabbit client tez
-    }
+    constructor(
+        private readonly prisma: DatabaseService,
+        @Inject('RABBITMQ_CLIENT') private readonly rabbitClient: ClientProxy,
+    ) { }
 
     //DONE
     async likePost(postId: string, userId: string): Promise<LikePostResponse> {
@@ -66,6 +68,14 @@ export class PostService {
             const likesCount = await tx.postLike.count({ where: { postId } });
             return { alreadyExisted, likesCount };
         });
+
+        // Emit like event to RabbitMQ
+        // this.rabbitClient.emit('post_liked', {
+        //     postId,
+        //     userId,
+        //     likesCount,
+        //     alreadyExisted,
+        // });
 
         return {
             success: true,
@@ -193,9 +203,111 @@ export class PostService {
         };
     }
 
-    // algorytm co wyswieltic userowi zeby sobie scrollowal
-    async getUserFeed(userId: string): Promise<UserFeedResponse> {
-        return;
+    // TODO: Implement user feed algorithm
+    async getUserFeed(userId: string, limit: number = 20): Promise<UserFeedResponse> {
+        // Simple feed algorithm based on user likes and recency
+        // const userLikes = await this.prisma.postLike.findMany({
+        //     where: { userId },
+        //     select: { 
+        //         postId: true,
+        //         post: { 
+        //             select: { 
+        //                 authorId: true
+        //             } 
+        //         } 
+        //     },
+        //     take: 100, // Get recent likes to understand preferences
+        //     orderBy: { createdAt: 'desc' }
+        // });
+
+        // Extract preferred authors from liked posts
+        // const likedAuthors = new Set(userLikes.map(like => like.post.authorId));
+
+        // Build the feed query with multiple strategies
+        // const feedPosts = await this.prisma.post.findMany({
+        //     where: {
+        //         deletedAt: null,
+        //         authorId: {
+        //             not: userId // Don't show user's own posts
+        //         },
+        //         OR: [
+        //             // Strategy 1: Posts from authors the user has liked before
+        //             {
+        //                 authorId: { in: Array.from(likedAuthors) }
+        //             },
+        //             // Strategy 2: Popular recent posts (fallback)
+        //             {
+        //                 likes: {
+        //                     some: {} // Has at least one like
+        //                 }
+        //             }
+        //         ]
+        //     },
+        //     select: {
+        //         id: true,
+        //         authorId: true,
+        //         content: true,
+        //         createdAt: true,
+        //         updatedAt: true,
+        //         media: {
+        //             select: {
+        //                 id: true,
+        //                 type: true,
+        //                 url: true,
+        //                 position: true,
+        //                 width: true,
+        //                 height: true,
+        //                 durationMs: true,
+        //             },
+        //             orderBy: { position: 'asc' },
+        //         },
+        //         _count: {
+        //             select: { likes: true, comments: true },
+        //         },
+        //     },
+        //     orderBy: [
+        //         // Then by engagement (likes + comments)
+        //         { likes: { _count: 'desc' } },
+        //         // Finally by recency
+        //         { createdAt: 'desc' }
+        //     ],
+        //     take: limit
+        // });
+
+        // Convert to DTO format
+        // const dtoList: PublicPostDto[] = feedPosts.map((p) => ({
+        //     id: p.id,
+        //     authorId: p.authorId,
+        //     content: p.content,
+        //     media: p.media.map<PublicPostMediaDto>((m) => ({
+        //         id: m.id,
+        //         type: m.type as unknown as PublicPostMediaDto['type'],
+        //         url: m.url ?? undefined,
+        //         position: m.position,
+        //         width: m.width ?? undefined,
+        //         height: m.height ?? undefined,
+        //         durationMs: m.durationMs ?? undefined,
+        //     })),
+        //     likesCount: p._count.likes,
+        //     commentsCount: p._count.comments,
+        //     createdAt: p.createdAt,
+        //     updatedAt: p.updatedAt,
+        // }));
+
+        // return {
+        //     success: true,
+        //     userId,
+        //     total: dtoList.length,
+        //     posts: dtoList,
+        // };
+
+        // Temporary implementation - returns empty feed
+        return {
+            success: true,
+            userId,
+            total: 0,
+            posts: [],
+        };
     }
 
     // DONE, pagination
@@ -350,7 +462,7 @@ export class PostService {
             data: {
                 authorId,
                 content: dto.content,
-                media: mediaData.length ? { create: mediaData } : undefined,
+                // media: mediaData.length ? { create: mediaData } : undefined,
             },
             select: {
                 id: true,
@@ -383,6 +495,14 @@ export class PostService {
             createdAt: created.createdAt,
             updatedAt: created.updatedAt,
         };
+
+        // Emit post creation event to RabbitMQ
+        // this.rabbitClient.emit('post_created', {
+        //     postId: created.id,
+        //     authorId: authorId,
+        //     content: dto.content,
+        //     createdAt: created.createdAt,
+        // });
 
         return {
             success: true,
@@ -429,7 +549,7 @@ export class PostService {
                 }
                 await tx.postMedia.deleteMany({ where: { postId } });
                 if (mediaData.length) {
-                    await tx.postMedia.createMany({ data: mediaData });
+                    // await tx.postMedia.createMany({ data: mediaData });
                 }
             });
         } else if (typeof dto.content === 'string') {
@@ -554,6 +674,7 @@ export class PostService {
         };
     }
 
+    // DONE
     async unlikeComment(commentId: string, userId: string): Promise<UnlikeCommentResponse> {
         const comment = await this.prisma.comment.findUnique({
             where: { id: commentId },
@@ -578,6 +699,7 @@ export class PostService {
         };
     }
 
+    // DONE
     async likeCommentReply(replyId: string, userId: string): Promise<LikeCommentReplyResponse> {
         const reply = await this.prisma.commentReply.findUnique({
             where: { id: replyId },
@@ -612,6 +734,7 @@ export class PostService {
         };
     }
 
+    // DONE
     async unlikeCommentReply(replyId: string, userId: string): Promise<UnlikeCommentReplyResponse> {
         const reply = await this.prisma.commentReply.findUnique({
             where: { id: replyId },
