@@ -106,20 +106,24 @@ export class UserService {
         }
     }
 
-    // add pagination
-    async findAll(): Promise<ListUsersResponse> {
-        const users = await this.prisma.user.findMany({
-            orderBy: { createdAt: 'desc' },
-            select: {
-                _count: { select: { followers: true, following: true } },
-                bio: true,
-                createdAt: true,
-                id: true,
-                username: true,
-            },
-        });
+    async findAll(page = 1, limit = 20): Promise<{ users: PublicUserDto[], total: number }> {
+        const [users, total] = await Promise.all([
+            this.prisma.user.findMany({
+                skip: (page - 1) * limit,
+                take: limit,
+                orderBy: { createdAt: 'desc' },
+                select: {
+                    _count: { select: { followers: true, following: true } },
+                    bio: true,
+                    createdAt: true,
+                    id: true,
+                    username: true,
+                },
+            }),
+            this.prisma.user.count()
+        ]);
 
-        const items = users.map((u) => ({
+        const mappedUsers = users.map((u) => ({
             bio: u.bio ?? undefined,
             createdAt: u.createdAt,
             followersCount: u._count.followers,
@@ -128,7 +132,7 @@ export class UserService {
             username: u.username,
         }));
 
-        return { items, count: items.length };
+        return { users: mappedUsers, total };
     }
 
     async followUser(followerId: string, followingId: string): Promise<FollowUserResponse> {
@@ -202,30 +206,36 @@ export class UserService {
         };
     }
 
-    // add pagination
-    async getUserFollowees(userId: string): Promise<PublicUserDto[]> {
-        const follows = await this.prisma.follow.findMany({
-            include: {
-                following: {
-                    select: {
-                        _count: {
-                            select: {
-                                followers: true,
-                                following: true,
+    async getUserFollowees(userId: string, page = 1, limit = 20): Promise<{ users: PublicUserDto[], total: number }> {
+        const [follows, total] = await Promise.all([
+            this.prisma.follow.findMany({
+                skip: (page - 1) * limit,
+                take: limit,
+                include: {
+                    following: {
+                        select: {
+                            _count: {
+                                select: {
+                                    followers: true,
+                                    following: true,
+                                },
                             },
+                            bio: true,
+                            createdAt: true,
+                            id: true,
+                            username: true,
                         },
-                        bio: true,
-                        createdAt: true,
-                        id: true,
-                        username: true,
                     },
                 },
-            },
-            orderBy: { createdAt: 'desc' }, // when the follow relation was created
-            where: { followerId: userId },
-        });
+                orderBy: { createdAt: 'desc' }, // when the follow relation was created
+                where: { followerId: userId },
+            }),
+            this.prisma.follow.count({
+                where: { followerId: userId }
+            })
+        ]);
 
-        return follows.map((f) => ({
+        const mappedUsers = follows.map((f) => ({
             bio: f.following.bio ?? undefined,
             createdAt: f.following.createdAt,
             followersCount: f.following._count.followers,
@@ -233,33 +243,41 @@ export class UserService {
             id: f.following.id,
             username: f.following.username,
         }));
+
+        return { users: mappedUsers, total };
     }
 
-    // add pagination
-    async getUserFollowers(userId: string): Promise<PublicUserDto[]> {
-        const follows = await this.prisma.follow.findMany({
-            include: {
-                follower: {
-                    select: {
-                        _count: {
-                            select: {
-                                followers: true,
-                                following: true,
+    async getUserFollowers(userId: string, page = 1, limit = 20): Promise<{ users: PublicUserDto[], total: number }> {
+        const [follows, total] = await Promise.all([
+            this.prisma.follow.findMany({
+                skip: (page - 1) * limit,
+                take: limit,
+                include: {
+                    follower: {
+                        select: {
+                            _count: {
+                                select: {
+                                    followers: true,
+                                    following: true,
+                                },
                             },
+                            bio: true,
+                            createdAt: true,
+                            email: true, // keep only if safe to expose
+                            id: true,
+                            username: true,
                         },
-                        bio: true,
-                        createdAt: true,
-                        email: true, // keep only if safe to expose
-                        id: true,
-                        username: true,
                     },
                 },
-            },
-            orderBy: { createdAt: 'desc' }, // order by Follow creation date
-            where: { followingId: userId },
-        });
+                orderBy: { createdAt: 'desc' }, // order by Follow creation date
+                where: { followingId: userId },
+            }),
+            this.prisma.follow.count({
+                where: { followingId: userId }
+            })
+        ]);
 
-        return follows.map((f) => ({
+        const mappedUsers = follows.map((f) => ({
             bio: f.follower.bio ?? undefined,
             createdAt: f.follower.createdAt,
             followersCount: f.follower._count.followers,
@@ -267,6 +285,8 @@ export class UserService {
             id: f.follower.id,
             username: f.follower.username,
         }));
+
+        return { users: mappedUsers, total };
     }
 
     async hardDeleteUser(userId: string): Promise<HardUserDeleteResponse> {
