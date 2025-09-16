@@ -11,6 +11,15 @@ export class GetCommentLikesResponse {
   @ApiProperty({ description: 'Total number of likes.', example: 5, minimum: 0 })
   total: number;
 
+  @ApiProperty({ description: 'Current page number.', example: 1, minimum: 1 })
+  page: number;
+
+  @ApiProperty({ description: 'Number of items per page.', example: 20, minimum: 1 })
+  limit: number;
+
+  @ApiProperty({ description: 'Total number of pages.', example: 1, minimum: 0 })
+  totalPages: number;
+
   @ApiProperty({ type: [PublicUserLiteDto], description: 'Users who liked the comment.' })
   users: PublicUserLiteDto[];
 }

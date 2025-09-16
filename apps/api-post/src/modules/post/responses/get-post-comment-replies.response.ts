@@ -14,6 +14,15 @@ export class GetPostCommentRepliesResponse {
   @ApiProperty({ description: 'Total number of replies returned.', example: 4, minimum: 0 })
   total: number;
 
+  @ApiProperty({ description: 'Current page number.', example: 1, minimum: 1 })
+  page: number;
+
+  @ApiProperty({ description: 'Number of items per page.', example: 20, minimum: 1 })
+  limit: number;
+
+  @ApiProperty({ description: 'Total number of pages.', example: 1, minimum: 0 })
+  totalPages: number;
+
   @ApiProperty({ type: [PostCommentReplyDto], description: 'List of replies for the comment.' })
   replies: PostCommentReplyDto[];
 }

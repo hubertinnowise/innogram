@@ -11,6 +11,15 @@ export class UserPostResponse {
   @ApiProperty({ description: 'Total number of posts returned.', example: 3, minimum: 0 })
   total: number;
 
+  @ApiProperty({ description: 'Current page number.', example: 1, minimum: 1 })
+  page: number;
+
+  @ApiProperty({ description: 'Number of items per page.', example: 20, minimum: 1 })
+  limit: number;
+
+  @ApiProperty({ description: 'Total number of pages.', example: 1, minimum: 0 })
+  totalPages: number;
+
   @ApiProperty({ type: [PublicPostDto], description: 'List of posts authored by the user.' })
   posts: PublicPostDto[];
 }

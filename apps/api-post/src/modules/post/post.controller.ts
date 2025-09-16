@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, HttpCode, Param, Patch, Post, Req, UseGuards } from "@nestjs/common";
+import { Body, Controller, Delete, Get, HttpCode, Param, Patch, Post, Query, Req, UseGuards } from "@nestjs/common";
 import { JwtAuthGuard } from 'packages/jwt-auth.guard';
 import {
     ApiCreatedResponse,
@@ -11,7 +11,7 @@ import {
 } from '@nestjs/swagger';
 import { PostService } from "./post.service";
 import { CommentPostDto, CreatePostDto, EditPostDto } from "./dto";
-import { AddCommentReplyResponse, CommentPostResponse, CreatePostResponse, EditPostResponse, GetCommentLikesResponse, GetCommentReplyLikesResponse, GetPostCommentRepliesResponse, GetPostCommentsResponse, GetPostLikesResponse, GetPostResponse, LikeCommentReplyResponse, LikeCommentResponse, LikePostResponse, RemoveCommentReplyResponse, RemovePostCommentResponse, RemovePostResponse, UnlikeCommentReplyResponse, UnlikeCommentResponse, UnlikePostResponse, UserFeedResponse } from "./responses";
+import { AddCommentReplyResponse, CommentPostResponse, CreatePostResponse, EditPostResponse, GetCommentLikesResponse, GetCommentReplyLikesResponse, GetPostCommentRepliesResponse, GetPostCommentsResponse, GetPostLikesResponse, GetPostResponse, LikeCommentReplyResponse, LikeCommentResponse, LikePostResponse, RemoveCommentReplyResponse, RemovePostCommentResponse, RemovePostResponse, UnlikeCommentReplyResponse, UnlikeCommentResponse, UnlikePostResponse, UserFeedResponse, UserPostResponse } from "./responses";
 import { AddCommentReplyDto } from "./dto/add-comment-reply.dto";
 
 @ApiTags('Posts')
@@ -20,7 +20,20 @@ export class PostController {
     constructor(private readonly postService: PostService) { }
 
     // ze tutaj guardy trzeba pododawac wszedzi
-    // getUserPosts
+
+    @Get('user/:userId')
+    @HttpCode(200)
+    @ApiOperation({ summary: 'Lists posts by a specific user.' })
+    @ApiParam({ name: 'userId', description: 'User ID' })
+    @ApiOkResponse({ description: 'User posts fetched.', type: UserPostResponse })
+    @ApiNotFoundResponse({ description: 'User not found.' })
+    async getUserPosts(
+        @Param('userId') userId: string,
+        @Query('page') page?: number,
+        @Query('limit') limit?: number,
+    ): Promise<UserPostResponse> {
+        return this.postService.getUserPosts(userId, page, limit);
+    }
 
     @Post(':postId/comments/:commentId/replies/:replyId/like')
     @UseGuards(JwtAuthGuard)
@@ -102,8 +115,10 @@ export class PostController {
     @ApiNotFoundResponse({ description: 'Post not found or deleted.' })
     async getPostLikes(
         @Param('postId') postId: string,
+        @Query('page') page?: number,
+        @Query('limit') limit?: number,
     ): Promise<GetPostLikesResponse> {
-        return this.postService.getPostLikes(postId);
+        return this.postService.getPostLikes(postId, page, limit);
     }
 
     @Get(':postId/comments')
@@ -114,8 +129,10 @@ export class PostController {
     @ApiNotFoundResponse({ description: 'Post not found or deleted.' })
     async getPostComments(
         @Param('postId') postId: string,
+        @Query('page') page?: number,
+        @Query('limit') limit?: number,
     ): Promise<GetPostCommentsResponse> {
-        return this.postService.getPostComments(postId);
+        return this.postService.getPostComments(postId, page, limit);
     }
 
     @Get(':postId/comments/:commentId/replies/:replyId/likes')
@@ -130,9 +147,11 @@ export class PostController {
         @Param('postId') _postId: string,
         @Param('commentId') _commentId: string,
         @Param('replyId') replyId: string,
+        @Query('page') page?: number,
+        @Query('limit') limit?: number,
     ): Promise<GetCommentReplyLikesResponse> {
         // Service checks existence and returns friendly response
-        return this.postService.getCommentReplyLikes(replyId);
+        return this.postService.getCommentReplyLikes(replyId, page, limit);
     }
 
     @Post(':postId/comments/:commentId/replies')
@@ -162,9 +181,11 @@ export class PostController {
     async getCommentLikes(
         @Param('postId') _postId: string,
         @Param('commentId') commentId: string,
+        @Query('page') page?: number,
+        @Query('limit') limit?: number,
     ): Promise<GetCommentLikesResponse> {
         // Service checks existence and returns friendly response
-        return this.postService.getCommentLikes(commentId);
+        return this.postService.getCommentLikes(commentId, page, limit);
     }
 
     @Delete(':postId/comments/:commentId/replies/:replyId')
@@ -197,8 +218,10 @@ export class PostController {
     async getPostCommentReplies(
         @Param('postId') postId: string,
         @Param('commentId') commentId: string,
+        @Query('page') page?: number,
+        @Query('limit') limit?: number,
     ): Promise<GetPostCommentRepliesResponse> {
-        return this.postService.getPostCommentReplies(postId, commentId);
+        return this.postService.getPostCommentReplies(postId, commentId, page, limit);
     }
 
     @Post(':id/like')

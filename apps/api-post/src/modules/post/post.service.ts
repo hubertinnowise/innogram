@@ -41,7 +41,6 @@ export class PostService {
         @Inject('RABBITMQ_CLIENT') private readonly rabbitClient: ClientProxy,
     ) { }
 
-    //DONE
     async likePost(postId: string, userId: string): Promise<LikePostResponse> {
         const post = await this.prisma.post.findUnique({
             where: { id: postId },
@@ -86,7 +85,6 @@ export class PostService {
         };
     }
 
-    //DONE
     async unlikePost(postId: string, userId: string): Promise<UnlikePostResponse> {
         const post = await this.prisma.post.findUnique({
             where: { id: postId },
@@ -166,7 +164,6 @@ export class PostService {
     }
 
     // SelfGuard, try catch PrismaError handling
-    //DONE
     async removePostComment(postId: string, commentId: string, userId: string,): Promise<RemovePostCommentResponse> {
         const comment = await this.prisma.comment.findUnique({
             where: { id: commentId },
@@ -205,103 +202,6 @@ export class PostService {
 
     // TODO: Implement user feed algorithm
     async getUserFeed(userId: string, limit: number = 20): Promise<UserFeedResponse> {
-        // Simple feed algorithm based on user likes and recency
-        // const userLikes = await this.prisma.postLike.findMany({
-        //     where: { userId },
-        //     select: { 
-        //         postId: true,
-        //         post: { 
-        //             select: { 
-        //                 authorId: true
-        //             } 
-        //         } 
-        //     },
-        //     take: 100, // Get recent likes to understand preferences
-        //     orderBy: { createdAt: 'desc' }
-        // });
-
-        // Extract preferred authors from liked posts
-        // const likedAuthors = new Set(userLikes.map(like => like.post.authorId));
-
-        // Build the feed query with multiple strategies
-        // const feedPosts = await this.prisma.post.findMany({
-        //     where: {
-        //         deletedAt: null,
-        //         authorId: {
-        //             not: userId // Don't show user's own posts
-        //         },
-        //         OR: [
-        //             // Strategy 1: Posts from authors the user has liked before
-        //             {
-        //                 authorId: { in: Array.from(likedAuthors) }
-        //             },
-        //             // Strategy 2: Popular recent posts (fallback)
-        //             {
-        //                 likes: {
-        //                     some: {} // Has at least one like
-        //                 }
-        //             }
-        //         ]
-        //     },
-        //     select: {
-        //         id: true,
-        //         authorId: true,
-        //         content: true,
-        //         createdAt: true,
-        //         updatedAt: true,
-        //         media: {
-        //             select: {
-        //                 id: true,
-        //                 type: true,
-        //                 url: true,
-        //                 position: true,
-        //                 width: true,
-        //                 height: true,
-        //                 durationMs: true,
-        //             },
-        //             orderBy: { position: 'asc' },
-        //         },
-        //         _count: {
-        //             select: { likes: true, comments: true },
-        //         },
-        //     },
-        //     orderBy: [
-        //         // Then by engagement (likes + comments)
-        //         { likes: { _count: 'desc' } },
-        //         // Finally by recency
-        //         { createdAt: 'desc' }
-        //     ],
-        //     take: limit
-        // });
-
-        // Convert to DTO format
-        // const dtoList: PublicPostDto[] = feedPosts.map((p) => ({
-        //     id: p.id,
-        //     authorId: p.authorId,
-        //     content: p.content,
-        //     media: p.media.map<PublicPostMediaDto>((m) => ({
-        //         id: m.id,
-        //         type: m.type as unknown as PublicPostMediaDto['type'],
-        //         url: m.url ?? undefined,
-        //         position: m.position,
-        //         width: m.width ?? undefined,
-        //         height: m.height ?? undefined,
-        //         durationMs: m.durationMs ?? undefined,
-        //     })),
-        //     likesCount: p._count.likes,
-        //     commentsCount: p._count.comments,
-        //     createdAt: p.createdAt,
-        //     updatedAt: p.updatedAt,
-        // }));
-
-        // return {
-        //     success: true,
-        //     userId,
-        //     total: dtoList.length,
-        //     posts: dtoList,
-        // };
-
-        // Temporary implementation - returns empty feed
         return {
             success: true,
             userId,
@@ -310,8 +210,7 @@ export class PostService {
         };
     }
 
-    // DONE, pagination
-    async getUserPosts(userId: string): Promise<UserPostResponse> {
+    async getUserPosts(userId: string, page: number = 1, limit: number = 20): Promise<UserPostResponse> {
         const user = await this.prisma.user.findUnique({
             where: { id: userId },
             select: { id: true },
@@ -321,36 +220,49 @@ export class PostService {
                 success: false,
                 userId,
                 total: 0,
+                page: 1,
+                limit: 20,
+                totalPages: 0,
                 posts: [],
             } as UserPostResponse;
         }
 
-        const posts = await this.prisma.post.findMany({
-            where: { authorId: userId, deletedAt: null },
-            orderBy: { createdAt: 'desc' },
-            select: {
-                id: true,
-                authorId: true,
-                content: true,
-                createdAt: true,
-                updatedAt: true,
-                media: {
-                    select: {
-                        id: true,
-                        type: true,
-                        url: true,
-                        position: true,
-                        width: true,
-                        height: true,
-                        durationMs: true,
+        // Validate and normalize pagination parameters
+        const normalizedPage = Math.max(1, page || 1);
+        const normalizedLimit = Math.max(1, Math.min(100, limit || 20)); // Cap at 100 items per page
+        const skip = (normalizedPage - 1) * normalizedLimit;
+
+        const [posts, total] = await Promise.all([
+            this.prisma.post.findMany({
+                where: { authorId: userId, deletedAt: null },
+                orderBy: { createdAt: 'desc' },
+                select: {
+                    id: true,
+                    authorId: true,
+                    content: true,
+                    createdAt: true,
+                    updatedAt: true,
+                    media: {
+                        select: {
+                            id: true,
+                            type: true,
+                            url: true,
+                            position: true,
+                            width: true,
+                            height: true,
+                            durationMs: true,
+                        },
+                        orderBy: { position: 'asc' },
                     },
-                    orderBy: { position: 'asc' },
+                    _count: {
+                        select: { likes: true, comments: true },
+                    },
                 },
-                _count: {
-                    select: { likes: true, comments: true },
-                },
-            },
-        });
+                skip,
+                take: normalizedLimit,
+            }),
+            this.prisma.post.count({ where: { authorId: userId, deletedAt: null } })
+        ]);
 
         const dtoList: PublicPostDto[] = posts.map((p) => ({
             id: p.id,
@@ -358,7 +270,7 @@ export class PostService {
             content: p.content,
             media: p.media.map<PublicPostMediaDto>((m) => ({
                 id: m.id,
-                // m.type is PostMediaType; cast to the DTO union (identical literal values)
+                // m.type is PostMediaType; cast to the DTO union - identical literal values
                 type: m.type as unknown as PublicPostMediaDto['type'],
                 url: m.url ?? undefined,
                 position: m.position,
@@ -372,15 +284,19 @@ export class PostService {
             updatedAt: p.updatedAt,
         }));
 
+        const totalPages = Math.ceil(total / normalizedLimit);
+
         return {
             success: true,
             userId,
-            total: dtoList.length,
+            total,
+            page: normalizedPage,
+            limit: normalizedLimit,
+            totalPages,
             posts: dtoList,
         };
     }
 
-    //DONE
     async getPost(postId: string): Promise<GetPostResponse> {
         const post = await this.prisma.post.findUnique({
             where: { id: postId },
@@ -438,7 +354,8 @@ export class PostService {
     // TO BE CHECKED SelfGuard, dto 
     async createPost(authorId: string, dto: CreatePostDto): Promise<CreatePostResponse> {
         const user = await this.prisma.user.findUnique({ where: { id: authorId }, select: { id: true } });
-        if (!user) throw new Error('User not found.');
+        if (!user) 
+            throw new Error('User not found.');
 
         // Inline normalize: sort by provided position (if any), then reindex 0..n and default bucket.
         const mediaData =
@@ -519,9 +436,12 @@ export class PostService {
             select: { id: true, authorId: true, deletedAt: true },
         });
 
-        if (!post) throw new Error('Post not found.');
-        if (post.deletedAt) throw new Error('Post has been deleted.');
-        if (post.authorId !== userId) throw new Error('Not authorized to edit this post.');
+        if (!post) 
+            throw new Error('Post not found.');
+        if (post.deletedAt) 
+            throw new Error('Post has been deleted.');
+        if (post.authorId !== userId) 
+            throw new Error('Not authorized to edit this post.');
 
         if (dto.media) {
             // Replace-all semantics for media + optional content update in one TX
@@ -674,7 +594,6 @@ export class PostService {
         };
     }
 
-    // DONE
     async unlikeComment(commentId: string, userId: string): Promise<UnlikeCommentResponse> {
         const comment = await this.prisma.comment.findUnique({
             where: { id: commentId },
@@ -699,7 +618,6 @@ export class PostService {
         };
     }
 
-    // DONE
     async likeCommentReply(replyId: string, userId: string): Promise<LikeCommentReplyResponse> {
         const reply = await this.prisma.commentReply.findUnique({
             where: { id: replyId },
@@ -734,7 +652,6 @@ export class PostService {
         };
     }
 
-    // DONE
     async unlikeCommentReply(replyId: string, userId: string): Promise<UnlikeCommentReplyResponse> {
         const reply = await this.prisma.commentReply.findUnique({
             where: { id: replyId },
@@ -759,30 +676,45 @@ export class PostService {
         };
     }
 
-    // DONE, pagination
-    async getPostComments(postId: string): Promise<GetPostCommentsResponse> {
+    async getPostComments(postId: string, page: number = 1, limit: number = 20): Promise<GetPostCommentsResponse> {
         const post = await this.prisma.post.findUnique({
             where: { id: postId },
             select: { id: true, deletedAt: true },
         });
         if (!post || post.deletedAt) {
-            return { success: false, postId, total: 0, comments: [] };
+            return { 
+                success: false, 
+                postId, 
+                total: 0, 
+                page: 1, 
+                limit: 20, 
+                totalPages: 0, 
+                comments: [] 
+            };
         }
 
-        const comments = await this.prisma.comment.findMany({
-            where: {
-                postId,
-            },
-            orderBy: { createdAt: 'desc' },
-            select: {
-                id: true,
-                authorId: true,
-                content: true,
-                createdAt: true,
-                updatedAt: true,
-                _count: { select: { likes: true } }, // relies on CommentLike relation name `likes`
-            },
-        });
+        // Validate and normalize pagination parameters
+        const normalizedPage = Math.max(1, page || 1);
+        const normalizedLimit = Math.max(1, Math.min(100, limit || 20)); // Cap at 100 items per page
+        const skip = (normalizedPage - 1) * normalizedLimit;
+
+        const [comments, total] = await Promise.all([
+            this.prisma.comment.findMany({
+                where: { postId },
+                orderBy: { createdAt: 'desc' },
+                select: {
+                    id: true,
+                    authorId: true,
+                    content: true,
+                    createdAt: true,
+                    updatedAt: true,
+                    _count: { select: { likes: true } }, // relies on CommentLike relation name `likes`
+                },
+                skip,
+                take: normalizedLimit,
+            }),
+            this.prisma.comment.count({ where: { postId } })
+        ]);
 
         const dtoList: PostCommentDto[] = comments.map((c) => ({
             id: c.id,
@@ -793,58 +725,113 @@ export class PostService {
             updatedAt: c.updatedAt,
         }));
 
+        const totalPages = Math.ceil(total / normalizedLimit);
+
         return {
             success: true,
             postId,
-            total: dtoList.length,
+            total,
+            page: normalizedPage,
+            limit: normalizedLimit,
+            totalPages,
             comments: dtoList,
         };
     }
 
-    //DONE, pagination
-    async getPostLikes(postId: string): Promise<GetPostLikesResponse> {
-        // Optional friendly check
+    async getPostLikes(postId: string, page: number = 1, limit: number = 20): Promise<GetPostLikesResponse> {
         const post = await this.prisma.post.findUnique({
             where: { id: postId },
             select: { id: true, deletedAt: true },
         });
         if (!post || post.deletedAt) {
-            return { success: false, postId, total: 0, users: [] };
+            return { 
+                success: false, 
+                postId, 
+                total: 0, 
+                page: 1, 
+                limit: 20, 
+                totalPages: 0, 
+                users: [] 
+            };
         }
 
-        const likes = await this.prisma.postLike.findMany({
-            where: { postId },
-            select: { user: { select: { id: true } } },
-            // orderBy: { createdAt: 'desc' }, // uncomment if PostLike has createdAt
-        });
+        // Validate and normalize pagination parameters
+        const normalizedPage = Math.max(1, page || 1);
+        const normalizedLimit = Math.max(1, Math.min(100, limit || 20)); // Cap at 100 items per page
+        const skip = (normalizedPage - 1) * normalizedLimit;
+
+        const [likes, total] = await Promise.all([
+            this.prisma.postLike.findMany({
+                where: { postId },
+                select: { user: { select: { id: true } } },
+                // orderBy: { createdAt: 'desc' }, // uncomment if PostLike has createdAt
+                skip,
+                take: normalizedLimit,
+            }),
+            this.prisma.postLike.count({ where: { postId } })
+        ]);
 
         const users: PublicUserLiteDto[] = likes.map(l => ({ id: l.user.id }));
+        const totalPages = Math.ceil(total / normalizedLimit);
 
-        return { success: true, postId, total: users.length, users };
+        return { 
+            success: true, 
+            postId, 
+            total, 
+            page: normalizedPage, 
+            limit: normalizedLimit, 
+            totalPages, 
+            users 
+        };
     }
 
-    // DONE, pagination
-    async getCommentLikes(commentId: string): Promise<GetCommentLikesResponse> {
+    async getCommentLikes(commentId: string, page: number = 1, limit: number = 20): Promise<GetCommentLikesResponse> {
         const comment = await this.prisma.comment.findUnique({
             where: { id: commentId },
             select: { id: true },
         });
         if (!comment) {
-            return { success: false, commentId, total: 0, users: [] };
+            return { 
+                success: false, 
+                commentId, 
+                total: 0, 
+                page: 1, 
+                limit: 20, 
+                totalPages: 0, 
+                users: [] 
+            };
         }
 
-        const likes = await this.prisma.commentLike.findMany({
-            where: { commentId },
-            select: { user: { select: { id: true } } },
-            // orderBy: { createdAt: 'desc' }, // you have createdAt on CommentLike
-        });
+        // Validate and normalize pagination parameters
+        const normalizedPage = Math.max(1, page || 1);
+        const normalizedLimit = Math.max(1, Math.min(100, limit || 20)); // Cap at 100 items per page
+        const skip = (normalizedPage - 1) * normalizedLimit;
+
+        const [likes, total] = await Promise.all([
+            this.prisma.commentLike.findMany({
+                where: { commentId },
+                select: { user: { select: { id: true } } },
+                orderBy: { createdAt: 'desc' },
+                skip,
+                take: normalizedLimit,
+            }),
+            this.prisma.commentLike.count({ where: { commentId } })
+        ]);
 
         const users: PublicUserLiteDto[] = likes.map(l => ({ id: l.user.id }));
+        const totalPages = Math.ceil(total / normalizedLimit);
 
-        return { success: true, commentId, total: users.length, users };
+        return { 
+            success: true, 
+            commentId, 
+            total, 
+            page: normalizedPage, 
+            limit: normalizedLimit, 
+            totalPages, 
+            users 
+        };
     }
 
-    // TO BE CHECKED 
     async addCommentReply(postId: string, commentId: string, userId: string, dto: AddCommentReplyDto): Promise<AddCommentReplyResponse> {
         const post = await this.prisma.post.findUnique({
             where: { id: postId },
@@ -887,25 +874,51 @@ export class PostService {
         };
     }
 
-    //DONE, pagination
-    async getCommentReplyLikes(replyId: string): Promise<GetCommentReplyLikesResponse> {
+    async getCommentReplyLikes(replyId: string, page: number = 1, limit: number = 20): Promise<GetCommentReplyLikesResponse> {
         const reply = await this.prisma.commentReply.findUnique({
             where: { id: replyId },
             select: { id: true },
         });
         if (!reply) {
-            return { success: false, replyId, total: 0, users: [] };
+            return { 
+                success: false, 
+                replyId, 
+                total: 0, 
+                page: 1, 
+                limit: 20, 
+                totalPages: 0, 
+                users: [] 
+            };
         }
 
-        const likes = await this.prisma.commentReplyLike.findMany({
-            where: { replyId },
-            select: { user: { select: { id: true } } },
-            orderBy: { createdAt: 'desc' },
-        });
+        // Validate and normalize pagination parameters
+        const normalizedPage = Math.max(1, page || 1);
+        const normalizedLimit = Math.max(1, Math.min(100, limit || 20)); // Cap at 100 items per page
+        const skip = (normalizedPage - 1) * normalizedLimit;
+
+        const [likes, total] = await Promise.all([
+            this.prisma.commentReplyLike.findMany({
+                where: { replyId },
+                select: { user: { select: { id: true } } },
+                orderBy: { createdAt: 'desc' },
+                skip,
+                take: normalizedLimit,
+            }),
+            this.prisma.commentReplyLike.count({ where: { replyId } })
+        ]);
 
         const users: PublicUserLiteDto[] = likes.map(l => ({ id: l.user.id }));
+        const totalPages = Math.ceil(total / normalizedLimit);
 
-        return { success: true, replyId, total: users.length, users };
+        return { 
+            success: true, 
+            replyId, 
+            total, 
+            page: normalizedPage, 
+            limit: normalizedLimit, 
+            totalPages, 
+            users 
+        };
     }
 
     // DONE, self guard jaki albo co
@@ -969,8 +982,7 @@ export class PostService {
         };
     }
 
-    // DONE
-    async getPostCommentReplies(postId: string, commentId: string,): Promise<GetPostCommentRepliesResponse> {
+    async getPostCommentReplies(postId: string, commentId: string, page: number = 1, limit: number = 20): Promise<GetPostCommentRepliesResponse> {
         const comment = await this.prisma.comment.findUnique({
             where: { id: commentId },
             select: {
@@ -981,22 +993,41 @@ export class PostService {
         });
 
         if (!comment || comment.postId !== postId || comment.post.deletedAt) {
-            return { success: false, postId, commentId, total: 0, replies: [] };
+            return { 
+                success: false, 
+                postId, 
+                commentId, 
+                total: 0, 
+                page: 1, 
+                limit: 20, 
+                totalPages: 0, 
+                replies: [] 
+            };
         }
 
-        const replies = await this.prisma.commentReply.findMany({
-            where: { commentId },
-            orderBy: { createdAt: 'desc' },
-            select: {
-                id: true,
-                commentId: true,
-                authorId: true,
-                content: true,
-                createdAt: true,
-                updatedAt: true,
-                _count: { select: { likes: true } }, // relation name is `likes` on CommentReply
-            },
-        });
+        // Validate and normalize pagination parameters
+        const normalizedPage = Math.max(1, page || 1);
+        const normalizedLimit = Math.max(1, Math.min(100, limit || 20)); // Cap at 100 items per page
+        const skip = (normalizedPage - 1) * normalizedLimit;
+
+        const [replies, total] = await Promise.all([
+            this.prisma.commentReply.findMany({
+                where: { commentId },
+                orderBy: { createdAt: 'desc' },
+                select: {
+                    id: true,
+                    commentId: true,
+                    authorId: true,
+                    content: true,
+                    createdAt: true,
+                    updatedAt: true,
+                    _count: { select: { likes: true } }, // relation name is `likes` on CommentReply
+                },
+                skip,
+                take: normalizedLimit,
+            }),
+            this.prisma.commentReply.count({ where: { commentId } })
+        ]);
 
         const dtoList: PostCommentReplyDto[] = replies.map((r) => ({
             id: r.id,
@@ -1008,11 +1039,16 @@ export class PostService {
             updatedAt: r.updatedAt,
         }));
 
+        const totalPages = Math.ceil(total / normalizedLimit);
+
         return {
             success: true,
             postId,
             commentId,
-            total: dtoList.length,
+            total,
+            page: normalizedPage,
+            limit: normalizedLimit,
+            totalPages,
             replies: dtoList,
         };
     }
