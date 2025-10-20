@@ -2,17 +2,16 @@ import { Body, Controller, HttpCode, Patch, Post } from '@nestjs/common';
 import { ApiCreatedResponse, ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
 
 import { AuthService } from './auth.service';
-import { RegisterDto } from './dto/register.dto';
-import { LoginDto } from './dto/login.dto';
 import { ChangePasswordDto } from './dto/change-password.dto';
-
+import { LoginDto } from './dto/login.dto';
+import { RegisterDto } from './dto/register.dto';
 import {
-    LoginResponse,
-    RegisterResponse,
-    RefreshResponse,
-    LogoutResponse,
     ChangePasswordResponse,
     ForgotPasswordResponse,
+    LoginResponse,
+    LogoutResponse,
+    RefreshResponse,
+    RegisterResponse,
     ResendVerificationResponse,
     ResetPasswordResponse,
     VerifyEmailResponse,
@@ -21,14 +20,20 @@ import {
 @ApiTags('Auth')
 @Controller('auth')
 export class AuthController {
-    constructor(private readonly authService: AuthService) { }
+    @Patch('change-password')
+    @ApiOperation({ summary: 'Change password (requires old and new password)' })
+    @ApiOkResponse({ description: 'Password changed', type: ChangePasswordResponse })
+    async changePassword(@Body() dto: ChangePasswordDto): Promise<ChangePasswordResponse> {
+        return this.authService.changePassword(dto.userId, dto.oldPassword, dto.newPassword);
+    }
 
-    @Post('register')
-    @HttpCode(201)
-    @ApiOperation({ summary: 'Register a new user' })
-    @ApiCreatedResponse({ description: 'User registered', type: RegisterResponse })
-    async register(@Body() dto: RegisterDto): Promise<RegisterResponse> {
-        return this.authService.register(dto);
+    constructor(private readonly authService: AuthService) {}
+
+    @Post('forgot-password')
+    @ApiOperation({ summary: 'Generate password reset token' })
+    @ApiOkResponse({ description: 'Reset token generated', type: ForgotPasswordResponse })
+    async forgotPassword(@Body('email') email: string): Promise<ForgotPasswordResponse> {
+        return this.authService.forgotPassword(email);
     }
 
     @Post('login')
@@ -38,13 +43,6 @@ export class AuthController {
         return this.authService.login(dto);
     }
 
-    @Post('refresh')
-    @ApiOperation({ summary: 'Refresh access token using refresh token' })
-    @ApiOkResponse({ description: 'Token refreshed', type: RefreshResponse })
-    async refresh(@Body('refreshToken') refreshToken: string): Promise<RefreshResponse> {
-        return this.authService.refresh(refreshToken);
-    }
-
     @Post('logout')
     @ApiOperation({ summary: 'Logout by revoking the refresh token' })
     @ApiOkResponse({ description: 'Logged out', type: LogoutResponse })
@@ -52,18 +50,19 @@ export class AuthController {
         return this.authService.logout(refreshToken);
     }
 
-    @Patch('change-password')
-    @ApiOperation({ summary: 'Change password (requires old and new password)' })
-    @ApiOkResponse({ description: 'Password changed', type: ChangePasswordResponse })
-    async changePassword(@Body() dto: ChangePasswordDto): Promise<ChangePasswordResponse> {
-        return this.authService.changePassword(dto.userId, dto.oldPassword, dto.newPassword);
+    @Post('refresh')
+    @ApiOperation({ summary: 'Refresh access token using refresh token' })
+    @ApiOkResponse({ description: 'Token refreshed', type: RefreshResponse })
+    async refresh(@Body('refreshToken') refreshToken: string): Promise<RefreshResponse> {
+        return this.authService.refresh(refreshToken);
     }
 
-    @Post('forgot-password')
-    @ApiOperation({ summary: 'Generate password reset token' })
-    @ApiOkResponse({ description: 'Reset token generated', type: ForgotPasswordResponse })
-    async forgotPassword(@Body('email') email: string): Promise<ForgotPasswordResponse> {
-        return this.authService.forgotPassword(email);
+    @Post('register')
+    @HttpCode(201)
+    @ApiOperation({ summary: 'Register a new user' })
+    @ApiCreatedResponse({ description: 'User registered', type: RegisterResponse })
+    async register(@Body() dto: RegisterDto): Promise<RegisterResponse> {
+        return this.authService.register(dto);
     }
 
     @Post('resend-verification')

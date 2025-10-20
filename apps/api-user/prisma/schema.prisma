@@ -1,5 +1,6 @@
 generator client {
   provider = "prisma-client-js"
+  output   = "../../node_modules/@prisma/client-user"
 }
 
 //ze teraz klient jest generowany do node modules @prisma w roocie, i z tego korzysta databaseservice!

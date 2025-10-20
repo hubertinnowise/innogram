@@ -3,9 +3,7 @@
     "compilerOptions": {
         "outDir": "../../dist/apps/api-auth",
         "module": "commonjs",
-        "types": [
-            "node"
-        ],
+        "types": ["node"],
         "emitDecoratorMetadata": true,
         "target": "es2021",
         "skipLibCheck": true,
@@ -13,20 +11,10 @@
         "esModuleInterop": true,
         "baseUrl": ".",
         "paths": {
-            "@/*": [
-                "src/*"
-            ],
-            "@core/*": [
-                "src/core/*"
-            ]
+            "@/*": ["src/*"],
+            "@core/*": ["src/core/*"]
         }
     },
-    "exclude": [
-        "jest.config.ts",
-        "src/**/*.spec.ts",
-        "src/**/*.test.ts"
-    ],
-    "include": [
-        "src/**/*.ts"
-    ]
+    "exclude": ["jest.config.ts", "src/**/*.spec.ts", "src/**/*.test.ts"],
+    "include": ["src/**/*.ts"]
 }

@@ -1,11 +1,13 @@
-import { Test, TestingModule } from '@nestjs/testing';
+import { DatabaseService } from '@core/database/database.service';
 import { BadRequestException, ConflictException, ForbiddenException, NotFoundException } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
-import { UserService } from './user.service';
-import { DatabaseService } from '@core/database/database.service';
+import { Test, TestingModule } from '@nestjs/testing';
+
+import { PrismaErrorCode } from '@/core/enums /prisma-error-code.enum';
+
 import { BanUserDto } from './dto/ban-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
-import { PrismaErrorCode } from '@/core/enums /prisma-error-code.enum';
+import { UserService } from './user.service';
 
 describe('UserService', () => {
     let service: UserService;
@@ -13,54 +15,54 @@ describe('UserService', () => {
     let clientProxy: jest.Mocked<ClientProxy>;
 
     const mockUser = {
-        id: 'user-1',
-        username: 'testuser',
-        email: 'test@example.com',
-        bio: 'Test bio',
-        phoneNumber: '+1234567890',
-        createdAt: new Date('2023-01-01'),
-        isBanned: false,
-        bannedUntil: null,
-        bannedOn: null,
-        banReason: null,
-        bannedById: null,
-        deletedAt: null,
         _count: {
             followers: 5,
             following: 3,
         },
+        bannedById: null,
+        bannedOn: null,
+        bannedUntil: null,
+        banReason: null,
+        bio: 'Test bio',
+        createdAt: new Date('2023-01-01'),
+        deletedAt: null,
+        email: 'test@example.com',
+        id: 'user-1',
+        isBanned: false,
+        phoneNumber: '+1234567890',
+        username: 'testuser',
     };
 
     const mockPublicUser = {
-        id: 'user-1',
-        username: 'testuser',
         bio: 'Test bio',
         createdAt: new Date('2023-01-01'),
         followersCount: 5,
         followingCount: 3,
+        id: 'user-1',
+        username: 'testuser',
     };
 
     beforeEach(async () => {
         const mockPrismaService = {
-            user: {
-                findUnique: jest.fn(),
-                findMany: jest.fn(),
-                count: jest.fn(),
-                update: jest.fn(),
-                delete: jest.fn(),
-            },
+            $transaction: jest.fn(),
             follow: {
-                findMany: jest.fn(),
                 count: jest.fn(),
-                upsert: jest.fn(),
                 deleteMany: jest.fn(),
+                findMany: jest.fn(),
+                upsert: jest.fn(),
+            },
+            user: {
+                count: jest.fn(),
+                delete: jest.fn(),
+                findMany: jest.fn(),
+                findUnique: jest.fn(),
+                update: jest.fn(),
             },
             userBlock: {
+                deleteMany: jest.fn(),
                 findFirst: jest.fn(),
                 upsert: jest.fn(),
-                deleteMany: jest.fn(),
             },
-            $transaction: jest.fn(),
         };
 
         const mockClientProxy = {
@@ -93,8 +95,8 @@ describe('UserService', () => {
 
     describe('banUser', () => {
         const banUserDto: BanUserDto = {
-            banReason: 'Inappropriate behavior',
             bannedUntil: '2024-12-31T23:59:59.000Z',
+            banReason: 'Inappropriate behavior',
         };
         const adminId = 'admin-1';
 
@@ -119,9 +121,9 @@ describe('UserService', () => {
                 where: { id: 'user-1' },
             });
             expect(result).toEqual({
-                success: true,
-                message: 'User banned.',
                 adminId,
+                message: 'User banned.',
+                success: true,
                 userId: 'user-1',
             });
         });
@@ -129,8 +131,7 @@ describe('UserService', () => {
         it('should throw NotFoundException when user does not exist', async () => {
             prismaService.user.findUnique.mockResolvedValue(null);
 
-            await expect(service.banUser('nonexistent', banUserDto, adminId))
-                .rejects.toThrow(NotFoundException);
+            await expect(service.banUser('nonexistent', banUserDto, adminId)).rejects.toThrow(NotFoundException);
         });
 
         it('should handle permanent ban when bannedUntil is not provided', async () => {
@@ -161,12 +162,12 @@ describe('UserService', () => {
             prismaService.user.findUnique
                 .mockResolvedValueOnce({ id: blockerId })
                 .mockResolvedValueOnce({ id: targetUserId });
-            
+
             const mockTransaction = {
-                userBlock: { upsert: jest.fn().mockResolvedValue({}) },
                 follow: { deleteMany: jest.fn().mockResolvedValue({ count: 1 }) },
+                userBlock: { upsert: jest.fn().mockResolvedValue({}) },
             };
-            
+
             prismaService.$transaction.mockImplementation(async (callback) => {
                 return await callback(mockTransaction);
             });
@@ -174,42 +175,35 @@ describe('UserService', () => {
             const result = await service.blockUser(targetUserId, blockerId);
 
             expect(result).toEqual({
-                success: true,
-                message: 'User blocked.',
-                blockerId,
                 blockedId: targetUserId,
+                blockerId,
+                message: 'User blocked.',
+                success: true,
             });
         });
 
         it('should throw BadRequestException when trying to block self', async () => {
             const userId = 'user-1';
 
-            await expect(service.blockUser(userId, userId))
-                .rejects.toThrow(BadRequestException);
+            await expect(service.blockUser(userId, userId)).rejects.toThrow(BadRequestException);
         });
 
         it('should throw NotFoundException when blocker does not exist', async () => {
             const blockerId = 'nonexistent';
             const targetUserId = 'user-2';
 
-            prismaService.user.findUnique
-                .mockResolvedValueOnce(null)
-                .mockResolvedValueOnce({ id: targetUserId });
+            prismaService.user.findUnique.mockResolvedValueOnce(null).mockResolvedValueOnce({ id: targetUserId });
 
-            await expect(service.blockUser(targetUserId, blockerId))
-                .rejects.toThrow(NotFoundException);
+            await expect(service.blockUser(targetUserId, blockerId)).rejects.toThrow(NotFoundException);
         });
 
         it('should throw NotFoundException when target user does not exist', async () => {
             const blockerId = 'user-1';
             const targetUserId = 'nonexistent';
 
-            prismaService.user.findUnique
-                .mockResolvedValueOnce({ id: blockerId })
-                .mockResolvedValueOnce(null);
+            prismaService.user.findUnique.mockResolvedValueOnce({ id: blockerId }).mockResolvedValueOnce(null);
 
-            await expect(service.blockUser(targetUserId, blockerId))
-                .rejects.toThrow(NotFoundException);
+            await expect(service.blockUser(targetUserId, blockerId)).rejects.toThrow(NotFoundException);
         });
     });
 
@@ -232,9 +226,9 @@ describe('UserService', () => {
                 where: { followerId_followingId: { followerId, followingId } },
             });
             expect(result).toEqual({
-                success: true,
-                message: 'Now following the user.',
                 followerId,
+                message: 'Now following the user.',
+                success: true,
                 targetUserId: followingId,
             });
         });
@@ -242,8 +236,7 @@ describe('UserService', () => {
         it('should throw BadRequestException when trying to follow self', async () => {
             const userId = 'user-1';
 
-            await expect(service.followUser(userId, userId))
-                .rejects.toThrow(BadRequestException);
+            await expect(service.followUser(userId, userId)).rejects.toThrow(BadRequestException);
         });
 
         it('should throw ForbiddenException when users are blocked', async () => {
@@ -251,13 +244,12 @@ describe('UserService', () => {
             const followingId = 'user-2';
 
             prismaService.userBlock.findFirst.mockResolvedValue({
-                id: 'block-1',
                 blockedId: followingId,
                 blockerId: followerId,
+                id: 'block-1',
             });
 
-            await expect(service.followUser(followerId, followingId))
-                .rejects.toThrow(ForbiddenException);
+            await expect(service.followUser(followerId, followingId)).rejects.toThrow(ForbiddenException);
         });
 
         it('should throw NotFoundException when follower does not exist', async () => {
@@ -265,12 +257,9 @@ describe('UserService', () => {
             const followingId = 'user-2';
 
             prismaService.userBlock.findFirst.mockResolvedValue(null);
-            prismaService.user.findUnique
-                .mockResolvedValueOnce(null)
-                .mockResolvedValueOnce({ id: followingId });
+            prismaService.user.findUnique.mockResolvedValueOnce(null).mockResolvedValueOnce({ id: followingId });
 
-            await expect(service.followUser(followerId, followingId))
-                .rejects.toThrow(NotFoundException);
+            await expect(service.followUser(followerId, followingId)).rejects.toThrow(NotFoundException);
         });
     });
 
@@ -290,9 +279,9 @@ describe('UserService', () => {
                 where: { followerId, followingId },
             });
             expect(result).toEqual({
-                success: true,
-                message: 'Unfollowed successfully.',
                 followerId,
+                message: 'Unfollowed successfully.',
+                success: true,
                 targetUserId: followingId,
             });
         });
@@ -300,8 +289,7 @@ describe('UserService', () => {
         it('should throw BadRequestException when trying to unfollow self', async () => {
             const userId = 'user-1';
 
-            await expect(service.unfollowUser(userId, userId))
-                .rejects.toThrow(BadRequestException);
+            await expect(service.unfollowUser(userId, userId)).rejects.toThrow(BadRequestException);
         });
 
         it('should throw NotFoundException when follow relationship does not exist', async () => {
@@ -313,8 +301,7 @@ describe('UserService', () => {
                 .mockResolvedValueOnce({ id: followingId });
             prismaService.follow.deleteMany.mockResolvedValue({ count: 0 });
 
-            await expect(service.unfollowUser(followerId, followingId))
-                .rejects.toThrow(NotFoundException);
+            await expect(service.unfollowUser(followerId, followingId)).rejects.toThrow(NotFoundException);
         });
     });
 
@@ -341,16 +328,15 @@ describe('UserService', () => {
         it('should throw NotFoundException when user does not exist', async () => {
             prismaService.user.findUnique.mockResolvedValue(null);
 
-            await expect(service.getUserDetails('nonexistent'))
-                .rejects.toThrow(NotFoundException);
+            await expect(service.getUserDetails('nonexistent')).rejects.toThrow(NotFoundException);
         });
     });
 
     describe('updateUser', () => {
         const updateDto: UpdateUserDto = {
-            username: 'newusername',
             bio: 'New bio',
             phoneNumber: '+9876543210',
+            username: 'newusername',
         };
 
         it('should successfully update user', async () => {
@@ -384,8 +370,7 @@ describe('UserService', () => {
         it('should throw NotFoundException when user does not exist', async () => {
             prismaService.user.findUnique.mockResolvedValue(null);
 
-            await expect(service.updateUser('nonexistent', updateDto))
-                .rejects.toThrow(NotFoundException);
+            await expect(service.updateUser('nonexistent', updateDto)).rejects.toThrow(NotFoundException);
         });
 
         it('should throw ConflictException on unique constraint violation', async () => {
@@ -396,8 +381,7 @@ describe('UserService', () => {
             prismaService.user.findUnique.mockResolvedValue({ id: 'user-1' });
             prismaService.user.update.mockRejectedValue(prismaError);
 
-            await expect(service.updateUser('user-1', updateDto))
-                .rejects.toThrow(ConflictException);
+            await expect(service.updateUser('user-1', updateDto)).rejects.toThrow(ConflictException);
         });
     });
 
@@ -410,8 +394,6 @@ describe('UserService', () => {
             const result = await service.findAll(1, 10);
 
             expect(prismaService.user.findMany).toHaveBeenCalledWith({
-                skip: 0,
-                take: 10,
                 orderBy: { createdAt: 'desc' },
                 select: {
                     _count: { select: { followers: true, following: true } },
@@ -420,6 +402,8 @@ describe('UserService', () => {
                     id: true,
                     username: true,
                 },
+                skip: 0,
+                take: 10,
             });
             expect(result.users).toHaveLength(1);
             expect(result.total).toBe(1);
@@ -438,18 +422,18 @@ describe('UserService', () => {
 
     describe('getUserFollowers', () => {
         it('should return paginated followers', async () => {
-            const mockFollows = [{
-                follower: mockUser,
-                createdAt: new Date(),
-            }];
+            const mockFollows = [
+                {
+                    createdAt: new Date(),
+                    follower: mockUser,
+                },
+            ];
             prismaService.follow.findMany.mockResolvedValue(mockFollows);
             prismaService.follow.count.mockResolvedValue(1);
 
             const result = await service.getUserFollowers('user-1', 1, 10);
 
             expect(prismaService.follow.findMany).toHaveBeenCalledWith({
-                skip: 0,
-                take: 10,
                 include: {
                     follower: {
                         select: {
@@ -463,6 +447,8 @@ describe('UserService', () => {
                     },
                 },
                 orderBy: { createdAt: 'desc' },
+                skip: 0,
+                take: 10,
                 where: { followingId: 'user-1' },
             });
             expect(result.users).toHaveLength(1);
@@ -472,18 +458,18 @@ describe('UserService', () => {
 
     describe('getUserFollowees', () => {
         it('should return paginated followees', async () => {
-            const mockFollows = [{
-                following: mockUser,
-                createdAt: new Date(),
-            }];
+            const mockFollows = [
+                {
+                    createdAt: new Date(),
+                    following: mockUser,
+                },
+            ];
             prismaService.follow.findMany.mockResolvedValue(mockFollows);
             prismaService.follow.count.mockResolvedValue(1);
 
             const result = await service.getUserFollowees('user-1', 1, 10);
 
             expect(prismaService.follow.findMany).toHaveBeenCalledWith({
-                skip: 0,
-                take: 10,
                 include: {
                     following: {
                         select: {
@@ -496,6 +482,8 @@ describe('UserService', () => {
                     },
                 },
                 orderBy: { createdAt: 'desc' },
+                skip: 0,
+                take: 10,
                 where: { followerId: 'user-1' },
             });
             expect(result.users).toHaveLength(1);
@@ -506,8 +494,8 @@ describe('UserService', () => {
     describe('isUserBanned', () => {
         it('should return false for unbanned user', async () => {
             prismaService.user.findUnique.mockResolvedValue({
-                isBanned: false,
                 bannedUntil: null,
+                isBanned: false,
             });
 
             const result = await service.isUserBanned('user-1');
@@ -517,8 +505,8 @@ describe('UserService', () => {
 
         it('should return true for permanently banned user', async () => {
             prismaService.user.findUnique.mockResolvedValue({
-                isBanned: true,
                 bannedUntil: null,
+                isBanned: true,
             });
 
             const result = await service.isUserBanned('user-1');
@@ -529,10 +517,10 @@ describe('UserService', () => {
         it('should return true for temporarily banned user (not expired)', async () => {
             const futureDate = new Date();
             futureDate.setDate(futureDate.getDate() + 7);
-            
+
             prismaService.user.findUnique.mockResolvedValue({
-                isBanned: true,
                 bannedUntil: futureDate,
+                isBanned: true,
             });
 
             const result = await service.isUserBanned('user-1');
@@ -543,10 +531,10 @@ describe('UserService', () => {
         it('should return false for temporarily banned user (expired)', async () => {
             const pastDate = new Date();
             pastDate.setDate(pastDate.getDate() - 7);
-            
+
             prismaService.user.findUnique.mockResolvedValue({
-                isBanned: true,
                 bannedUntil: pastDate,
+                isBanned: true,
             });
 
             const result = await service.isUserBanned('user-1');
@@ -557,8 +545,7 @@ describe('UserService', () => {
         it('should throw NotFoundException when user does not exist', async () => {
             prismaService.user.findUnique.mockResolvedValue(null);
 
-            await expect(service.isUserBanned('nonexistent'))
-                .rejects.toThrow(NotFoundException);
+            await expect(service.isUserBanned('nonexistent')).rejects.toThrow(NotFoundException);
         });
     });
 
@@ -573,8 +560,8 @@ describe('UserService', () => {
                 where: { id: 'user-1' },
             });
             expect(result).toEqual({
-                success: true,
                 message: 'User deleted.',
+                success: true,
                 userId: 'user-1',
             });
         });
@@ -582,16 +569,15 @@ describe('UserService', () => {
         it('should throw NotFoundException when user does not exist', async () => {
             prismaService.user.findUnique.mockResolvedValue(null);
 
-            await expect(service.hardDeleteUser('nonexistent'))
-                .rejects.toThrow(NotFoundException);
+            await expect(service.hardDeleteUser('nonexistent')).rejects.toThrow(NotFoundException);
         });
     });
 
     describe('softDeleteUser', () => {
         it('should successfully soft delete user', async () => {
             prismaService.user.findUnique.mockResolvedValue({
-                id: 'user-1',
                 deletedAt: null,
+                id: 'user-1',
             });
             prismaService.user.update.mockResolvedValue(mockUser);
 
@@ -618,8 +604,8 @@ describe('UserService', () => {
         it('should be idempotent for already soft-deleted user', async () => {
             const existingDeletedAt = new Date('2023-01-01');
             prismaService.user.findUnique.mockResolvedValue({
-                id: 'user-1',
                 deletedAt: existingDeletedAt,
+                id: 'user-1',
             });
             prismaService.user.update.mockResolvedValue(mockUser);
 
@@ -637,20 +623,19 @@ describe('UserService', () => {
         it('should throw NotFoundException when user does not exist', async () => {
             prismaService.user.findUnique.mockResolvedValue(null);
 
-            await expect(service.softDeleteUser('nonexistent'))
-                .rejects.toThrow(NotFoundException);
+            await expect(service.softDeleteUser('nonexistent')).rejects.toThrow(NotFoundException);
         });
     });
 
     describe('unbanUser', () => {
         it('should successfully unban user', async () => {
             prismaService.user.findUnique.mockResolvedValue({
+                bannedById: 'admin-1',
+                bannedOn: new Date(),
+                bannedUntil: new Date(),
+                banReason: 'Test ban',
                 id: 'user-1',
                 isBanned: true,
-                bannedUntil: new Date(),
-                bannedOn: new Date(),
-                banReason: 'Test ban',
-                bannedById: 'admin-1',
             });
             prismaService.user.update.mockResolvedValue(mockUser);
 
@@ -667,28 +652,28 @@ describe('UserService', () => {
                 where: { id: 'user-1' },
             });
             expect(result).toEqual({
-                success: true,
                 message: 'User unbanned.',
+                success: true,
                 userId: 'user-1',
             });
         });
 
         it('should return success message for already unbanned user', async () => {
             prismaService.user.findUnique.mockResolvedValue({
+                bannedById: null,
+                bannedOn: null,
+                bannedUntil: null,
+                banReason: null,
                 id: 'user-1',
                 isBanned: false,
-                bannedUntil: null,
-                bannedOn: null,
-                banReason: null,
-                bannedById: null,
             });
 
             const result = await service.unbanUser('user-1');
 
             expect(prismaService.user.update).not.toHaveBeenCalled();
             expect(result).toEqual({
-                success: true,
                 message: 'User already unbanned.',
+                success: true,
                 userId: 'user-1',
             });
         });
@@ -696,8 +681,7 @@ describe('UserService', () => {
         it('should throw NotFoundException when user does not exist', async () => {
             prismaService.user.findUnique.mockResolvedValue(null);
 
-            await expect(service.unbanUser('nonexistent'))
-                .rejects.toThrow(NotFoundException);
+            await expect(service.unbanUser('nonexistent')).rejects.toThrow(NotFoundException);
         });
     });
 
@@ -711,18 +695,17 @@ describe('UserService', () => {
                 where: { blockedId: 'user-2', blockerId: 'user-1' },
             });
             expect(result).toEqual({
-                success: true,
-                message: 'User unblocked.',
-                blockerId: 'user-1',
                 blockedId: 'user-2',
+                blockerId: 'user-1',
+                message: 'User unblocked.',
+                success: true,
             });
         });
 
         it('should throw NotFoundException when block does not exist', async () => {
             prismaService.userBlock.deleteMany.mockResolvedValue({ count: 0 });
 
-            await expect(service.unblockUser('user-1', 'user-2'))
-                .rejects.toThrow(NotFoundException);
+            await expect(service.unblockUser('user-1', 'user-2')).rejects.toThrow(NotFoundException);
         });
     });
 });

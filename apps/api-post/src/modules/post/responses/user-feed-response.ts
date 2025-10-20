@@ -1,4 +1,4 @@
-import { PublicPostDto } from "../dto/public-post.dto";
+import { PublicPostDto } from '../dto/public-post.dto';
 
 export class UserFeedResponse {
     success: boolean;

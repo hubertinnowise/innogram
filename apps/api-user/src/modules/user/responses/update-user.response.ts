@@ -1,27 +1,27 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class UpdateUserResponse {
-  @ApiProperty({ example: 'clz123abc456', description: 'Unique identifier of the user' })
-  id: string;
+    @ApiPropertyOptional({ description: 'User biography (optional)', example: 'Love building stuff!' })
+    bio?: string;
 
-  @ApiProperty({ example: 'user@example.com', description: 'Email address of the user' })
-  email: string;
+    @ApiProperty({ description: 'Date the user account was created', example: '2025-09-04T12:34:56.000Z' })
+    createdAt: Date;
 
-  @ApiPropertyOptional({ example: 'johndoe', description: 'Username of the user (nullable)' })
-  username: string | null;
+    @ApiProperty({ description: 'Email address of the user', example: 'user@example.com' })
+    email: string;
 
-  @ApiPropertyOptional({ example: '+48123123123', description: 'Phone number of the user (nullable)' })
-  phoneNumber: string | null;
+    @ApiProperty({ description: 'Number of followers the user has', example: 42 })
+    followersCount: number;
 
-  @ApiPropertyOptional({ example: 'Love building stuff!', description: 'User biography (optional)' })
-  bio?: string;
+    @ApiProperty({ description: 'Number of users this user is following', example: 10 })
+    followingCount: number;
 
-  @ApiProperty({ example: '2025-09-04T12:34:56.000Z', description: 'Date the user account was created' })
-  createdAt: Date;
+    @ApiProperty({ description: 'Unique identifier of the user', example: 'clz123abc456' })
+    id: string;
 
-  @ApiProperty({ example: 42, description: 'Number of followers the user has' })
-  followersCount: number;
+    @ApiPropertyOptional({ description: 'Phone number of the user (nullable)', example: '+48123123123' })
+    phoneNumber: null | string;
 
-  @ApiProperty({ example: 10, description: 'Number of users this user is following' })
-  followingCount: number;
+    @ApiPropertyOptional({ description: 'Username of the user (nullable)', example: 'johndoe' })
+    username: null | string;
 }

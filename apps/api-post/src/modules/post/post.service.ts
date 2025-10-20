@@ -1,36 +1,36 @@
-import { Injectable, Logger, Inject } from "@nestjs/common";
+import { Injectable, Logger, Inject } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import {
-  CommentPostResponse,
-  CreatePostResponse,
-  EditPostResponse,
-  GetPostResponse,
-  LikePostResponse,
-  RemovePostCommentResponse,
-  RemovePostResponse,
-  UnlikePostResponse,
-  UserFeedResponse,
-  UserPostResponse,
-  LikeCommentResponse,
-  UnlikeCommentResponse,
-  LikeCommentReplyResponse,
-  UnlikeCommentReplyResponse,
-  GetPostCommentsResponse,
-  GetPostCommentRepliesResponse,
-  RemoveCommentReplyResponse,
-  GetPostLikesResponse,
-  GetCommentLikesResponse,
-  GetCommentReplyLikesResponse,
-  AddCommentReplyResponse,
-} from "./responses";
+    CommentPostResponse,
+    CreatePostResponse,
+    EditPostResponse,
+    GetPostResponse,
+    LikePostResponse,
+    RemovePostCommentResponse,
+    RemovePostResponse,
+    UnlikePostResponse,
+    UserFeedResponse,
+    UserPostResponse,
+    LikeCommentResponse,
+    UnlikeCommentResponse,
+    LikeCommentReplyResponse,
+    UnlikeCommentReplyResponse,
+    GetPostCommentsResponse,
+    GetPostCommentRepliesResponse,
+    RemoveCommentReplyResponse,
+    GetPostLikesResponse,
+    GetCommentLikesResponse,
+    GetCommentReplyLikesResponse,
+    AddCommentReplyResponse,
+} from './responses';
 
-import { CommentPostDto, CreatePostDto, EditPostDto, PostCommentDto, PublicPostDto } from "./dto";
-import { DatabaseService } from "@/core/database/database.service";
-import { PublicPostMediaDto } from "./dto/public-post-media.dto";
-import { PostMediaType } from '@prisma/client';
-import { PostCommentReplyDto } from "./dto/post-comment-reply.dto";
-import { PublicUserLiteDto } from "./dto/public-user-lite.dto";
-import { AddCommentReplyDto } from "./dto/add-comment-reply.dto";
+import { CommentPostDto, CreatePostDto, EditPostDto, PostCommentDto, PublicPostDto } from './dto';
+import { DatabaseService } from '@/core/database/database.service';
+import { PublicPostMediaDto } from './dto/public-post-media.dto';
+import { PostMediaType } from '@prisma/client-post';
+import { PostCommentReplyDto } from './dto/post-comment-reply.dto';
+import { PublicUserLiteDto } from './dto/public-user-lite.dto';
+import { AddCommentReplyDto } from './dto/add-comment-reply.dto';
 
 @Injectable()
 export class PostService {
@@ -39,7 +39,7 @@ export class PostService {
     constructor(
         private readonly prisma: DatabaseService,
         @Inject('RABBITMQ_CLIENT') private readonly rabbitClient: ClientProxy,
-    ) { }
+    ) {}
 
     async likePost(postId: string, userId: string): Promise<LikePostResponse> {
         const post = await this.prisma.post.findUnique({
@@ -164,7 +164,7 @@ export class PostService {
     }
 
     // SelfGuard, try catch PrismaError handling
-    async removePostComment(postId: string, commentId: string, userId: string,): Promise<RemovePostCommentResponse> {
+    async removePostComment(postId: string, commentId: string, userId: string): Promise<RemovePostCommentResponse> {
         const comment = await this.prisma.comment.findUnique({
             where: { id: commentId },
             select: {
@@ -261,7 +261,7 @@ export class PostService {
                 skip,
                 take: normalizedLimit,
             }),
-            this.prisma.post.count({ where: { authorId: userId, deletedAt: null } })
+            this.prisma.post.count({ where: { authorId: userId, deletedAt: null } }),
         ]);
 
         const dtoList: PublicPostDto[] = posts.map((p) => ({
@@ -333,7 +333,7 @@ export class PostService {
             id: post.id,
             authorId: post.authorId,
             content: post.content,
-            media: post.media.map(m => ({
+            media: post.media.map((m) => ({
                 id: m.id,
                 type: m.type as PublicPostDto['media'][number]['type'], // narrow to DTO union
                 url: m.url ?? undefined,
@@ -351,28 +351,27 @@ export class PostService {
         return { success: true, post: dto };
     }
 
-    // TO BE CHECKED SelfGuard, dto 
+    // TO BE CHECKED SelfGuard, dto
     async createPost(authorId: string, dto: CreatePostDto): Promise<CreatePostResponse> {
         const user = await this.prisma.user.findUnique({ where: { id: authorId }, select: { id: true } });
-        if (!user) 
-            throw new Error('User not found.');
+        if (!user) throw new Error('User not found.');
 
         // Inline normalize: sort by provided position (if any), then reindex 0..n and default bucket.
         const mediaData =
             dto.media && dto.media.length
                 ? dto.media
-                    .slice()
-                    .sort((a, b) => (a.position ?? Number.MAX_SAFE_INTEGER) - (b.position ?? Number.MAX_SAFE_INTEGER))
-                    .map((m, i) => ({
-                        type: m.type,
-                        bucket: m.bucket ?? 'posts',
-                        objectKey: m.objectKey,
-                        url: m.url,
-                        position: i,
-                        width: m.width,
-                        height: m.height,
-                        durationMs: m.durationMs,
-                    }))
+                      .slice()
+                      .sort((a, b) => (a.position ?? Number.MAX_SAFE_INTEGER) - (b.position ?? Number.MAX_SAFE_INTEGER))
+                      .map((m, i) => ({
+                          type: m.type,
+                          bucket: m.bucket ?? 'posts',
+                          objectKey: m.objectKey,
+                          url: m.url,
+                          position: i,
+                          width: m.width,
+                          height: m.height,
+                          durationMs: m.durationMs,
+                      }))
                 : [];
 
         const created = await this.prisma.post.create({
@@ -388,7 +387,15 @@ export class PostService {
                 createdAt: true,
                 updatedAt: true,
                 media: {
-                    select: { id: true, type: true, url: true, position: true, width: true, height: true, durationMs: true },
+                    select: {
+                        id: true,
+                        type: true,
+                        url: true,
+                        position: true,
+                        width: true,
+                        height: true,
+                        durationMs: true,
+                    },
                     orderBy: { position: 'asc' },
                 },
             },
@@ -436,32 +443,28 @@ export class PostService {
             select: { id: true, authorId: true, deletedAt: true },
         });
 
-        if (!post) 
-            throw new Error('Post not found.');
-        if (post.deletedAt) 
-            throw new Error('Post has been deleted.');
-        if (post.authorId !== userId) 
-            throw new Error('Not authorized to edit this post.');
+        if (!post) throw new Error('Post not found.');
+        if (post.deletedAt) throw new Error('Post has been deleted.');
+        if (post.authorId !== userId) throw new Error('Not authorized to edit this post.');
 
         if (dto.media) {
             // Replace-all semantics for media + optional content update in one TX
-            const mediaData =
-                dto.media.length
-                    ? dto.media
-                        .slice()
-                        .sort((a, b) => (a.position ?? Number.MAX_SAFE_INTEGER) - (b.position ?? Number.MAX_SAFE_INTEGER))
-                        .map((m, i) => ({
-                            postId,
-                            type: m.type,
-                            bucket: m.bucket ?? 'posts',
-                            objectKey: m.objectKey,
-                            url: m.url,
-                            position: i,
-                            width: m.width,
-                            height: m.height,
-                            durationMs: m.durationMs,
-                        }))
-                    : [];
+            const mediaData = dto.media.length
+                ? dto.media
+                      .slice()
+                      .sort((a, b) => (a.position ?? Number.MAX_SAFE_INTEGER) - (b.position ?? Number.MAX_SAFE_INTEGER))
+                      .map((m, i) => ({
+                          postId,
+                          type: m.type,
+                          bucket: m.bucket ?? 'posts',
+                          objectKey: m.objectKey,
+                          url: m.url,
+                          position: i,
+                          width: m.width,
+                          height: m.height,
+                          durationMs: m.durationMs,
+                      }))
+                : [];
 
             await this.prisma.$transaction(async (tx) => {
                 if (typeof dto.content === 'string') {
@@ -486,7 +489,15 @@ export class PostService {
                 createdAt: true,
                 updatedAt: true,
                 media: {
-                    select: { id: true, type: true, url: true, position: true, width: true, height: true, durationMs: true },
+                    select: {
+                        id: true,
+                        type: true,
+                        url: true,
+                        position: true,
+                        width: true,
+                        height: true,
+                        durationMs: true,
+                    },
                     orderBy: { position: 'asc' },
                 },
                 _count: { select: { likes: true, comments: true } },
@@ -540,6 +551,7 @@ export class PostService {
                 deletedAt: post.deletedAt,
             };
         }
+
         // guard, check autorstwa w kontrollerze
         // if (post.authorId !== userId) {
         //     return { success: false, message: 'Not authorized to remove this post.' };
@@ -682,14 +694,14 @@ export class PostService {
             select: { id: true, deletedAt: true },
         });
         if (!post || post.deletedAt) {
-            return { 
-                success: false, 
-                postId, 
-                total: 0, 
-                page: 1, 
-                limit: 20, 
-                totalPages: 0, 
-                comments: [] 
+            return {
+                success: false,
+                postId,
+                total: 0,
+                page: 1,
+                limit: 20,
+                totalPages: 0,
+                comments: [],
             };
         }
 
@@ -713,7 +725,7 @@ export class PostService {
                 skip,
                 take: normalizedLimit,
             }),
-            this.prisma.comment.count({ where: { postId } })
+            this.prisma.comment.count({ where: { postId } }),
         ]);
 
         const dtoList: PostCommentDto[] = comments.map((c) => ({
@@ -744,14 +756,14 @@ export class PostService {
             select: { id: true, deletedAt: true },
         });
         if (!post || post.deletedAt) {
-            return { 
-                success: false, 
-                postId, 
-                total: 0, 
-                page: 1, 
-                limit: 20, 
-                totalPages: 0, 
-                users: [] 
+            return {
+                success: false,
+                postId,
+                total: 0,
+                page: 1,
+                limit: 20,
+                totalPages: 0,
+                users: [],
             };
         }
 
@@ -768,20 +780,20 @@ export class PostService {
                 skip,
                 take: normalizedLimit,
             }),
-            this.prisma.postLike.count({ where: { postId } })
+            this.prisma.postLike.count({ where: { postId } }),
         ]);
 
-        const users: PublicUserLiteDto[] = likes.map(l => ({ id: l.user.id }));
+        const users: PublicUserLiteDto[] = likes.map((l) => ({ id: l.user.id }));
         const totalPages = Math.ceil(total / normalizedLimit);
 
-        return { 
-            success: true, 
-            postId, 
-            total, 
-            page: normalizedPage, 
-            limit: normalizedLimit, 
-            totalPages, 
-            users 
+        return {
+            success: true,
+            postId,
+            total,
+            page: normalizedPage,
+            limit: normalizedLimit,
+            totalPages,
+            users,
         };
     }
 
@@ -791,14 +803,14 @@ export class PostService {
             select: { id: true },
         });
         if (!comment) {
-            return { 
-                success: false, 
-                commentId, 
-                total: 0, 
-                page: 1, 
-                limit: 20, 
-                totalPages: 0, 
-                users: [] 
+            return {
+                success: false,
+                commentId,
+                total: 0,
+                page: 1,
+                limit: 20,
+                totalPages: 0,
+                users: [],
             };
         }
 
@@ -815,24 +827,29 @@ export class PostService {
                 skip,
                 take: normalizedLimit,
             }),
-            this.prisma.commentLike.count({ where: { commentId } })
+            this.prisma.commentLike.count({ where: { commentId } }),
         ]);
 
-        const users: PublicUserLiteDto[] = likes.map(l => ({ id: l.user.id }));
+        const users: PublicUserLiteDto[] = likes.map((l) => ({ id: l.user.id }));
         const totalPages = Math.ceil(total / normalizedLimit);
 
-        return { 
-            success: true, 
-            commentId, 
-            total, 
-            page: normalizedPage, 
-            limit: normalizedLimit, 
-            totalPages, 
-            users 
+        return {
+            success: true,
+            commentId,
+            total,
+            page: normalizedPage,
+            limit: normalizedLimit,
+            totalPages,
+            users,
         };
     }
 
-    async addCommentReply(postId: string, commentId: string, userId: string, dto: AddCommentReplyDto): Promise<AddCommentReplyResponse> {
+    async addCommentReply(
+        postId: string,
+        commentId: string,
+        userId: string,
+        dto: AddCommentReplyDto,
+    ): Promise<AddCommentReplyResponse> {
         const post = await this.prisma.post.findUnique({
             where: { id: postId },
             select: { id: true, deletedAt: true },
@@ -874,20 +891,24 @@ export class PostService {
         };
     }
 
-    async getCommentReplyLikes(replyId: string, page: number = 1, limit: number = 20): Promise<GetCommentReplyLikesResponse> {
+    async getCommentReplyLikes(
+        replyId: string,
+        page: number = 1,
+        limit: number = 20,
+    ): Promise<GetCommentReplyLikesResponse> {
         const reply = await this.prisma.commentReply.findUnique({
             where: { id: replyId },
             select: { id: true },
         });
         if (!reply) {
-            return { 
-                success: false, 
-                replyId, 
-                total: 0, 
-                page: 1, 
-                limit: 20, 
-                totalPages: 0, 
-                users: [] 
+            return {
+                success: false,
+                replyId,
+                total: 0,
+                page: 1,
+                limit: 20,
+                totalPages: 0,
+                users: [],
             };
         }
 
@@ -904,20 +925,20 @@ export class PostService {
                 skip,
                 take: normalizedLimit,
             }),
-            this.prisma.commentReplyLike.count({ where: { replyId } })
+            this.prisma.commentReplyLike.count({ where: { replyId } }),
         ]);
 
-        const users: PublicUserLiteDto[] = likes.map(l => ({ id: l.user.id }));
+        const users: PublicUserLiteDto[] = likes.map((l) => ({ id: l.user.id }));
         const totalPages = Math.ceil(total / normalizedLimit);
 
-        return { 
-            success: true, 
-            replyId, 
-            total, 
-            page: normalizedPage, 
-            limit: normalizedLimit, 
-            totalPages, 
-            users 
+        return {
+            success: true,
+            replyId,
+            total,
+            page: normalizedPage,
+            limit: normalizedLimit,
+            totalPages,
+            users,
         };
     }
 
@@ -982,7 +1003,12 @@ export class PostService {
         };
     }
 
-    async getPostCommentReplies(postId: string, commentId: string, page: number = 1, limit: number = 20): Promise<GetPostCommentRepliesResponse> {
+    async getPostCommentReplies(
+        postId: string,
+        commentId: string,
+        page: number = 1,
+        limit: number = 20,
+    ): Promise<GetPostCommentRepliesResponse> {
         const comment = await this.prisma.comment.findUnique({
             where: { id: commentId },
             select: {
@@ -993,15 +1019,15 @@ export class PostService {
         });
 
         if (!comment || comment.postId !== postId || comment.post.deletedAt) {
-            return { 
-                success: false, 
-                postId, 
-                commentId, 
-                total: 0, 
-                page: 1, 
-                limit: 20, 
-                totalPages: 0, 
-                replies: [] 
+            return {
+                success: false,
+                postId,
+                commentId,
+                total: 0,
+                page: 1,
+                limit: 20,
+                totalPages: 0,
+                replies: [],
             };
         }
 
@@ -1026,7 +1052,7 @@ export class PostService {
                 skip,
                 take: normalizedLimit,
             }),
-            this.prisma.commentReply.count({ where: { commentId } })
+            this.prisma.commentReply.count({ where: { commentId } }),
         ]);
 
         const dtoList: PostCommentReplyDto[] = replies.map((r) => ({

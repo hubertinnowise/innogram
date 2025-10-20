@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 
 export class LogoutResponse {
-  @ApiProperty({ example: 'Logged out' })
-  message: string;
+    @ApiProperty({ example: 'Logged out' })
+    message: string;
 }

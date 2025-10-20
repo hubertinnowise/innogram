@@ -13,12 +13,22 @@ export class AddCommentReplyResponse {
     @ApiProperty({ description: 'ID of the parent comment.', example: 'cmt_2d4e6f8a-0b1c-3d5e-7f9a-0123456789ab' })
     commentId: string;
 
-    @ApiPropertyOptional({ description: 'ID of the created reply.', example: 'rpl_1a2b3c4d-5e6f-7a8b-9c0d-0123456789ab' })
+    @ApiPropertyOptional({
+        description: 'ID of the created reply.',
+        example: 'rpl_1a2b3c4d-5e6f-7a8b-9c0d-0123456789ab',
+    })
     replyId?: string;
 
-    @ApiProperty({ description: 'ID of the user who created the reply.', example: 'usr_1c2b3a4d-5e6f-7a8b-9c0d-1e2f3a4b5c6d' })
+    @ApiProperty({
+        description: 'ID of the user who created the reply.',
+        example: 'usr_1c2b3a4d-5e6f-7a8b-9c0d-1e2f3a4b5c6d',
+    })
     userId: string;
 
-    @ApiPropertyOptional({ description: 'Replies count under the parent comment after creation.', example: 3, minimum: 0 })
+    @ApiPropertyOptional({
+        description: 'Replies count under the parent comment after creation.',
+        example: 3,
+        minimum: 0,
+    })
     repliesCount?: number;
 }

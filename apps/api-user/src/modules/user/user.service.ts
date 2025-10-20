@@ -1,33 +1,35 @@
+import { DatabaseService } from '@core/database/database.service';
 import {
     BadRequestException,
     ConflictException,
     ForbiddenException,
     Inject,
     Injectable,
+    Logger,
     NotFoundException,
-    Logger
 } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 
-import { DatabaseService } from '@core/database/database.service';
+import { PrismaErrorCode } from '@/core/enums /prisma-error-code.enum';
+import { isPrismaKnownError } from '@/core/errors/is-prisma-known-error';
+
 import { PublicUserDto, UpdateUserDto } from './dto';
 import { BanUserDto } from './dto/ban-user.dto';
-import { BanUserResponse, BlockUserResponse, FollowUserResponse, HardUserDeleteResponse, UnbanUserResponse, UnblockUserResponse, UnfollowUserResponse } from './responses';
-import { ListUsersResponse } from './responses/list-user.response';
+import {
+    BanUserResponse,
+    BlockUserResponse,
+    FollowUserResponse,
+    HardUserDeleteResponse,
+    UnbanUserResponse,
+    UnblockUserResponse,
+    UnfollowUserResponse,
+} from './responses';
 import { IsUserBannedResponse } from './responses/is-user-banned.response';
+import { ListUsersResponse } from './responses/list-user.response';
 import { UpdateUserResponse } from './responses/update-user.response';
-import { isPrismaKnownError } from '@/core/errors/is-prisma-known-error';
-import { PrismaErrorCode } from '@/core/enums /prisma-error-code.enum';
 
 @Injectable()
 export class UserService {
-    private readonly logger = new Logger(UserService.name);
-
-    constructor(
-        private readonly prisma: DatabaseService,
-        @Inject('RABBITMQ_CLIENT') private readonly client: ClientProxy,
-    ) { }
-
     async banUser(id: string, dto: BanUserDto, adminId: string): Promise<BanUserResponse> {
         const user = await this.prisma.user.findUnique({
             select: { id: true },
@@ -48,9 +50,9 @@ export class UserService {
         this.logger.log(`Banned user ${id}.`);
 
         return {
-            success: true,
-            message: 'User banned.',
             adminId: adminId,
+            message: 'User banned.',
+            success: true,
             userId: id,
         };
     }
@@ -77,7 +79,6 @@ export class UserService {
                     where: { blockerId_blockedId: { blockedId: targetUserId, blockerId } }, // @@unique([blockerId, blockedId])
                 });
 
-
                 // break any follow relationships in either direction
                 await tx.follow.deleteMany({
                     where: {
@@ -92,10 +93,10 @@ export class UserService {
             this.logger.log(`User ${blockerId} blocked user ${targetUserId}.`);
 
             return {
-                success: true,
-                message: 'User blocked.',
-                blockerId: blockerId,
                 blockedId: targetUserId,
+                blockerId: blockerId,
+                message: 'User blocked.',
+                success: true,
             };
         } catch (e: unknown) {
             if (isPrismaKnownError(e)) {
@@ -107,11 +108,14 @@ export class UserService {
         }
     }
 
-    async findAll(page = 1, limit = 20): Promise<{ users: PublicUserDto[], total: number }> {
+    constructor(
+        private readonly prisma: DatabaseService,
+        @Inject('RABBITMQ_CLIENT') private readonly client: ClientProxy,
+    ) {}
+
+    async findAll(page = 1, limit = 20): Promise<{ total: number; users: PublicUserDto[] }> {
         const [users, total] = await Promise.all([
             this.prisma.user.findMany({
-                skip: (page - 1) * limit,
-                take: limit,
                 orderBy: { createdAt: 'desc' },
                 select: {
                     _count: { select: { followers: true, following: true } },
@@ -119,10 +123,11 @@ export class UserService {
                     createdAt: true,
                     id: true,
                     username: true,
-                    
                 },
+                skip: (page - 1) * limit,
+                take: limit,
             }),
-            this.prisma.user.count()
+            this.prisma.user.count(),
         ]);
 
         const mappedUsers = users.map((u) => ({
@@ -134,7 +139,7 @@ export class UserService {
             username: u.username,
         }));
 
-        return { users: mappedUsers, total };
+        return { total, users: mappedUsers };
     }
 
     async followUser(followerId: string, followingId: string): Promise<FollowUserResponse> {
@@ -174,9 +179,9 @@ export class UserService {
         this.logger.log(`User ${followerId} followed user ${followingId}.`);
 
         return {
-            success: true,
-            message: 'Now following the user.',
             followerId: followerId,
+            message: 'Now following the user.',
+            success: true,
             targetUserId: followingId,
         };
     }
@@ -208,11 +213,9 @@ export class UserService {
         };
     }
 
-    async getUserFollowees(userId: string, page = 1, limit = 20): Promise<{ users: PublicUserDto[], total: number }> {
+    async getUserFollowees(userId: string, page = 1, limit = 20): Promise<{ total: number; users: PublicUserDto[] }> {
         const [follows, total] = await Promise.all([
             this.prisma.follow.findMany({
-                skip: (page - 1) * limit,
-                take: limit,
                 include: {
                     following: {
                         select: {
@@ -230,11 +233,13 @@ export class UserService {
                     },
                 },
                 orderBy: { createdAt: 'desc' }, // when the follow relation was created
+                skip: (page - 1) * limit,
+                take: limit,
                 where: { followerId: userId },
             }),
             this.prisma.follow.count({
-                where: { followerId: userId }
-            })
+                where: { followerId: userId },
+            }),
         ]);
 
         const mappedUsers = follows.map((f) => ({
@@ -246,14 +251,12 @@ export class UserService {
             username: f.following.username,
         }));
 
-        return { users: mappedUsers, total };
+        return { total, users: mappedUsers };
     }
 
-    async getUserFollowers(userId: string, page = 1, limit = 20): Promise<{ users: PublicUserDto[], total: number }> {
+    async getUserFollowers(userId: string, page = 1, limit = 20): Promise<{ total: number; users: PublicUserDto[] }> {
         const [follows, total] = await Promise.all([
             this.prisma.follow.findMany({
-                skip: (page - 1) * limit,
-                take: limit,
                 include: {
                     follower: {
                         select: {
@@ -272,11 +275,13 @@ export class UserService {
                     },
                 },
                 orderBy: { createdAt: 'desc' }, // order by Follow creation date
+                skip: (page - 1) * limit,
+                take: limit,
                 where: { followingId: userId },
             }),
             this.prisma.follow.count({
-                where: { followingId: userId }
-            })
+                where: { followingId: userId },
+            }),
         ]);
 
         const mappedUsers = follows.map((f) => ({
@@ -288,7 +293,7 @@ export class UserService {
             username: f.follower.username,
         }));
 
-        return { users: mappedUsers, total };
+        return { total, users: mappedUsers };
     }
 
     async hardDeleteUser(userId: string): Promise<HardUserDeleteResponse> {
@@ -307,8 +312,8 @@ export class UserService {
         });
 
         return {
-            success: true,
             message: 'User deleted.',
+            success: true,
             userId,
         };
     }
@@ -334,9 +339,11 @@ export class UserService {
         return { isBanned: user.bannedUntil > new Date() };
     }
 
+    private readonly logger = new Logger(UserService.name);
+
     async softDeleteUser(userId: string): Promise<PublicUserDto> {
         const user = await this.prisma.user.findUnique({
-            select: { id: true, deletedAt: true },
+            select: { deletedAt: true, id: true },
             where: { id: userId },
         });
         if (!user) throw new NotFoundException('User not found');
@@ -359,24 +366,24 @@ export class UserService {
         this.logger.log(`User ${userId} was set to be soft-deleted.`);
 
         return {
-            id: updated.id,
-            username: updated.username,
             bio: updated.bio ?? undefined,
             createdAt: updated.createdAt,
             followersCount: updated._count.followers,
             followingCount: updated._count.following,
+            id: updated.id,
+            username: updated.username,
         };
     }
 
     async unbanUser(id: string): Promise<UnbanUserResponse> {
         const user = await this.prisma.user.findUnique({
             select: {
+                bannedById: true,
+                bannedOn: true,
+                bannedUntil: true,
+                banReason: true,
                 id: true,
                 isBanned: true,
-                bannedUntil: true,
-                bannedOn: true,
-                banReason: true,
-                bannedById: true,
             },
             where: { id },
         });
@@ -385,7 +392,7 @@ export class UserService {
 
         // nothing to clear — already unbanned
         if (!user.isBanned && !user.bannedUntil && !user.bannedOn && !user.banReason && !user.bannedById) {
-            return { success: true, message: 'User already unbanned.', userId: id };
+            return { message: 'User already unbanned.', success: true, userId: id };
         }
 
         await this.prisma.user.update({
@@ -401,7 +408,7 @@ export class UserService {
 
         this.logger.log(`User ${id} got unbanned.`);
 
-        return { success: true, message: 'User unbanned.', userId: id };
+        return { message: 'User unbanned.', success: true, userId: id };
     }
 
     async unblockUser(blockerId: string, blockedId: string): Promise<UnblockUserResponse> {
@@ -416,10 +423,10 @@ export class UserService {
         this.logger.log(`User ${blockerId} unblocked user ${blockedId}.`);
 
         return {
-            success: true,
-            message: 'User unblocked.',
-            blockerId,
             blockedId,
+            blockerId,
+            message: 'User unblocked.',
+            success: true,
         };
     }
 
@@ -447,9 +454,9 @@ export class UserService {
         this.logger.log(`User ${followerId} unfollowed user ${followingId}.`);
 
         return {
-            success: true,
-            message: 'Unfollowed successfully.',
             followerId,
+            message: 'Unfollowed successfully.',
+            success: true,
             targetUserId: followingId,
         };
     }
@@ -483,14 +490,14 @@ export class UserService {
             this.logger.log(`User ${userId} updated details.`);
 
             return {
-                id: updated.id,
-                email: updated.email,
-                username: updated.username,
-                phoneNumber: updated.phoneNumber,
                 bio: updated.bio ?? undefined,
                 createdAt: updated.createdAt,
+                email: updated.email,
                 followersCount: updated._count.followers,
                 followingCount: updated._count.following,
+                id: updated.id,
+                phoneNumber: updated.phoneNumber,
+                username: updated.username,
             };
         } catch (e: unknown) {
             if (isPrismaKnownError(e)) {

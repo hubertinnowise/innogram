@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, HttpCode, Param, Patch, Post, Query, Req, UseGuards } from "@nestjs/common";
+import { Body, Controller, Delete, Get, HttpCode, Param, Patch, Post, Query, Req, UseGuards } from '@nestjs/common';
 import { JwtAuthGuard } from 'packages/jwt-auth.guard';
 import {
     ApiCreatedResponse,
@@ -9,15 +9,37 @@ import {
     ApiParam,
     ApiTags,
 } from '@nestjs/swagger';
-import { PostService } from "./post.service";
-import { CommentPostDto, CreatePostDto, EditPostDto } from "./dto";
-import { AddCommentReplyResponse, CommentPostResponse, CreatePostResponse, EditPostResponse, GetCommentLikesResponse, GetCommentReplyLikesResponse, GetPostCommentRepliesResponse, GetPostCommentsResponse, GetPostLikesResponse, GetPostResponse, LikeCommentReplyResponse, LikeCommentResponse, LikePostResponse, RemoveCommentReplyResponse, RemovePostCommentResponse, RemovePostResponse, UnlikeCommentReplyResponse, UnlikeCommentResponse, UnlikePostResponse, UserFeedResponse, UserPostResponse } from "./responses";
-import { AddCommentReplyDto } from "./dto/add-comment-reply.dto";
+import { PostService } from './post.service';
+import { CommentPostDto, CreatePostDto, EditPostDto } from './dto';
+import {
+    AddCommentReplyResponse,
+    CommentPostResponse,
+    CreatePostResponse,
+    EditPostResponse,
+    GetCommentLikesResponse,
+    GetCommentReplyLikesResponse,
+    GetPostCommentRepliesResponse,
+    GetPostCommentsResponse,
+    GetPostLikesResponse,
+    GetPostResponse,
+    LikeCommentReplyResponse,
+    LikeCommentResponse,
+    LikePostResponse,
+    RemoveCommentReplyResponse,
+    RemovePostCommentResponse,
+    RemovePostResponse,
+    UnlikeCommentReplyResponse,
+    UnlikeCommentResponse,
+    UnlikePostResponse,
+    UserFeedResponse,
+    UserPostResponse,
+} from './responses';
+import { AddCommentReplyDto } from './dto/add-comment-reply.dto';
 
 @ApiTags('Posts')
 @Controller('posts')
 export class PostController {
-    constructor(private readonly postService: PostService) { }
+    constructor(private readonly postService: PostService) {}
 
     // ze tutaj guardy trzeba pododawac wszedzi
 
@@ -261,9 +283,7 @@ export class PostController {
     @HttpCode(200)
     @ApiOperation({ summary: 'Get personalized user feed based on likes and follows' })
     @ApiOkResponse({ description: 'Feed fetched successfully.', type: UserFeedResponse })
-    async getUserFeed(
-        @Req() req: any,
-    ): Promise<UserFeedResponse> {
+    async getUserFeed(@Req() req: any): Promise<UserFeedResponse> {
         const userId: string = req.user.id;
         return this.postService.getUserFeed(userId);
     }
@@ -301,10 +321,7 @@ export class PostController {
     @UseGuards(JwtAuthGuard)
     @ApiOperation({ summary: 'Create post' })
     @ApiCreatedResponse({ description: 'Created', type: CreatePostResponse })
-    async createPost(
-        @Req() req: any,
-        @Body() dto: CreatePostDto,
-    ): Promise<CreatePostResponse> {
+    async createPost(@Req() req: any, @Body() dto: CreatePostDto): Promise<CreatePostResponse> {
         const authorId: string = req.user.id;
         return this.postService.createPost(authorId, dto);
     }
@@ -314,10 +331,7 @@ export class PostController {
     @ApiOperation({ summary: 'Remove post' })
     @ApiParam({ name: 'id', description: 'Post ID' })
     @ApiOkResponse({ description: 'Removed', type: RemovePostResponse })
-    async removePost(
-        @Req() req: any,
-        @Param('id') postId: string,
-    ): Promise<RemovePostResponse> {
+    async removePost(@Req() req: any, @Param('id') postId: string): Promise<RemovePostResponse> {
         const userId: string = req.user.id;
         return this.postService.removePost(postId, userId);
     }
@@ -327,11 +341,7 @@ export class PostController {
     @ApiOperation({ summary: 'Partially update a post' })
     @ApiParam({ name: 'id', description: 'Post ID' })
     @ApiOkResponse({ description: 'Updated', type: EditPostResponse })
-    async editPost(
-        @Req() req: any,
-        @Param('id') postId: string,
-        @Body() dto: EditPostDto,
-    ): Promise<EditPostResponse> {
+    async editPost(@Req() req: any, @Param('id') postId: string, @Body() dto: EditPostDto): Promise<EditPostResponse> {
         const authorId: string = req.user.id;
         return this.postService.editPost(postId, authorId, dto);
     }

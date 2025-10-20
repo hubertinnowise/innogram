@@ -13,17 +13,12 @@ import { PostModule } from './post/post.module';
         ClientsModule.registerAsync([
             {
                 name: 'RABBITMQ_CLIENT',
-                imports: [ConfigModule],        
+                imports: [ConfigModule],
                 inject: [ConfigService],
                 useFactory: async (config: ConfigService) => ({
                     transport: Transport.RMQ,
                     options: {
-                        urls: [
-                            config.get<string>(
-                                'RABBITMQ_URL',
-                                'amqp://guest:guest@rabbitmq:5672',
-                            ),
-                        ],
+                        urls: [config.get<string>('RABBITMQ_URL', 'amqp://guest:guest@rabbitmq:5672')],
                         queue: config.get<string>('RABBITMQ_QUEUE', 'default_queue'),
                         queueOptions: { durable: false },
                     },

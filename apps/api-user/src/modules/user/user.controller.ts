@@ -1,36 +1,28 @@
-import { Body, Controller, Delete, Get, HttpCode, Param, Patch, Post, Query, Req, UseGuards } from '@nestjs/common';
-import {
-    ApiOperation,
-    ApiTags,
-    ApiOkResponse,
-    ApiCreatedResponse,
-} from '@nestjs/swagger';
-
-import { JwtAuthGuard } from 'packages/jwt-auth.guard';
-
 import { AdminGuard } from '@core/guards/admin-guard';
 import { NotSelfGuard } from '@core/guards/not-self-guard';
 import { SelfGuard } from '@core/guards/self-guard';
+import { Body, Controller, Delete, Get, HttpCode, Param, Patch, Post, Query, Req, UseGuards } from '@nestjs/common';
+import { ApiCreatedResponse, ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
+
+import { JwtAuthGuard } from 'packages/jwt-auth.guard';
+
 import { PublicUserDto, UpdateUserDto } from './dto';
 import { BanUserDto } from './dto/ban-user.dto';
-import { UserService } from './user.service';
-
 import {
-    FollowUserResponse,
-    UnfollowUserResponse,
-    BlockUserResponse,
-    UnblockUserResponse,
     BanUserResponse,
-    UnbanUserResponse,
+    BlockUserResponse,
+    FollowUserResponse,
     HardUserDeleteResponse,
+    UnbanUserResponse,
+    UnblockUserResponse,
+    UnfollowUserResponse,
 } from './responses';
 import { PaginatedUsersResponse } from './responses/paginated-users.response';
+import { UserService } from './user.service';
 
 @ApiTags('Users')
 @Controller('users')
 export class UserController {
-    constructor(private readonly userService: UserService) { }
-
     @UseGuards(JwtAuthGuard, AdminGuard, NotSelfGuard)
     @Patch(':id/ban')
     @ApiOperation({ summary: 'Ban a user (admin only, cannot ban self)' })
@@ -49,14 +41,13 @@ export class UserController {
         return this.userService.blockUser(id, blockerId);
     }
 
+    constructor(private readonly userService: UserService) {}
+
     @UseGuards(JwtAuthGuard)
     @Get()
     @ApiOperation({ summary: 'List all users' })
     @ApiOkResponse({ description: 'List of users', type: PaginatedUsersResponse })
-    async findAll(
-        @Query('page') page?: number,
-        @Query('limit') limit?: number
-    ) {
+    async findAll(@Query('page') page?: number, @Query('limit') limit?: number) {
         return this.userService.findAll(page, limit);
     }
 
@@ -81,11 +72,7 @@ export class UserController {
     @Get(':id/following')
     @ApiOperation({ summary: 'List users that the given user follows' })
     @ApiOkResponse({ description: 'List of followees', type: PaginatedUsersResponse })
-    async getUserFollowees(
-        @Param('id') id: string,
-        @Query('page') page?: number,
-        @Query('limit') limit?: number
-    ) {
+    async getUserFollowees(@Param('id') id: string, @Query('page') page?: number, @Query('limit') limit?: number) {
         return this.userService.getUserFollowees(id, page, limit);
     }
 
@@ -93,11 +80,7 @@ export class UserController {
     @Get(':id/followers')
     @ApiOperation({ summary: 'List followers of the given user' })
     @ApiOkResponse({ description: 'List of followers', type: PaginatedUsersResponse })
-    async getUserFollowers(
-        @Param('id') id: string,
-        @Query('page') page?: number,
-        @Query('limit') limit?: number
-    ) {
+    async getUserFollowers(@Param('id') id: string, @Query('page') page?: number, @Query('limit') limit?: number) {
         return this.userService.getUserFollowers(id, page, limit);
     }
 

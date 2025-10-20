@@ -1,3 +1,4 @@
+import { DatabaseService } from '@core/database/database.service';
 import { BadRequestException, Inject, Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ClientProxy } from '@nestjs/microservices';
@@ -5,9 +6,7 @@ import * as bcrypt from 'bcrypt';
 import { addMinutes } from 'date-fns';
 import { v4 as uuidv4 } from 'uuid';
 
-import { DatabaseService } from '@core/database/database.service';
 import { LoginDto, RegisterDto } from './dto';
-
 import {
     ChangePasswordResponse,
     ForgotPasswordResponse,
@@ -22,12 +21,6 @@ import {
 
 @Injectable()
 export class AuthService {
-    constructor(
-        private readonly prisma: DatabaseService,
-        private readonly jwt: JwtService,
-        @Inject('RABBITMQ_CLIENT') private readonly rabbitClient: ClientProxy,
-    ) { }
-
     async changePassword(userId: string, oldPassword: string, newPassword: string): Promise<ChangePasswordResponse> {
         const user = await this.prisma.user.findUnique({ where: { id: userId } });
 
@@ -48,6 +41,12 @@ export class AuthService {
     private async compare(password: string, hash: string): Promise<boolean> {
         return await bcrypt.compare(password, hash);
     }
+
+    constructor(
+        private readonly prisma: DatabaseService,
+        private readonly jwt: JwtService,
+        @Inject('RABBITMQ_CLIENT') private readonly rabbitClient: ClientProxy,
+    ) {}
 
     async forgotPassword(email: string): Promise<ForgotPasswordResponse> {
         const user = await this.prisma.user.findUnique({ where: { email } });
