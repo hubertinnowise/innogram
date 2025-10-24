@@ -10,7 +10,7 @@ import {
 } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 
-import { PrismaErrorCode } from '@/core/enums /prisma-error-code.enum';
+import { PrismaErrorCode } from '@/core/enums/prisma-error-code.enum';
 import { isPrismaKnownError } from '@/core/errors/is-prisma-known-error';
 
 import { PublicUserDto, UpdateUserDto } from './dto';

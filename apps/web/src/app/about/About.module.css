@@ -1,0 +1,142 @@
+.aboutPage {
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 3rem;
+    padding-top: 0;
+    padding-bottom: 0;
+}
+
+.aboutSection {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    margin-bottom: 4rem;
+}
+
+.aboutContent {
+    flex: 1;
+    text-align: justify;
+    max-width: 60%;
+}
+
+.aboutContent > h2  {
+    font-size: 24px;
+    font-weight: bold;
+    margin-bottom: 12px;
+}
+
+.aboutContent span {
+    font-weight: bold;
+}
+
+.aboutContent a {
+    color: #0066cc;
+    text-decoration: none;
+}
+
+.aboutContent a:hover {
+    color: #004499;
+    text-decoration: underline;
+}
+
+.logoContainer {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.logo {
+    max-width: 280px;
+    height: auto;
+    object-fit: contain;
+}
+
+.functionalitiesSection {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    margin-bottom: 4rem;
+}
+
+.functionalitiesLogoContainer {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.functionalitiesLogo {
+    max-width: 200px;
+    height: auto;
+    object-fit: contain;
+}
+
+.functionalitiesContent {
+    flex: 1;
+    text-align: justify;
+    max-width: 60%;
+}
+
+.functionalitiesContent > h2 {
+    font-size: 24px;
+    font-weight: bold;
+    margin-bottom: 12px;
+}
+
+.techSection {
+    text-align: justify;
+}
+
+.techSection > h2 {
+    font-size: 24px;
+    font-weight: bold;
+    margin-bottom: 12px;
+}
+
+.techIcons {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 1.5rem;
+    margin-top: 1rem;
+}
+
+.techItem {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 1rem;
+    border-radius: 8px;
+    background-color: #f8f9fa;
+    transition: all 0.3s ease;
+    text-decoration: none;
+    color: inherit;
+    cursor: pointer;
+}
+
+.techItem:hover {
+    background-color: #e9ecef;
+}
+
+.techItem i {
+    font-size: 2.5rem;
+    filter: grayscale(100%) brightness(0.7);
+    transition: filter 0.3s ease;
+}
+
+.techItem:hover i {
+    filter: none;
+}
+
+.techItem span {
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: #6b7280;
+    transition: color 0.3s ease;
+}
+
+.techItem:hover span {
+    color: #333;
+}

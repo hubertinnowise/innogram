@@ -1,0 +1,107 @@
+.postContainer {
+    width: 45vw;
+    margin: 0 auto;
+    padding: 24px;
+    border: 1px solid lightgray;
+    border-radius: 8px;
+    background-color: white;
+}
+
+.postHeader {
+    margin-bottom: 20px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.postTitle {
+    color: #111827;
+    font-size: 28px;
+    font-weight: 700;
+    margin-bottom: 12px;
+    line-height: 1.3;
+}
+
+.postMeta {
+    display: flex;
+    gap: 16px;
+    color: #6b7280;
+    font-size: 14px;
+}
+
+.postStats {
+    font-weight: 500;
+}
+
+.postContent {
+    margin-bottom: 24px;
+    line-height: 1.6;
+    color: #374151;
+    font-size: 16px;
+}
+
+.postContent p {
+    margin: 0;
+}
+
+.postAuthor {
+    margin-bottom: 24px;
+    padding: 16px;
+    background-color: #f9fafb;
+    border-radius: 6px;
+    border: 1px solid #e5e7eb;
+}
+
+.postAuthor h3 {
+    color: #374151;
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 8px;
+}
+
+.authorLink {
+    color: #dc2626;
+    text-decoration: none;
+    font-weight: 500;
+    transition: color 0.2s;
+}
+
+.authorLink:hover {
+    color: #b91c1c;
+    text-decoration: underline;
+}
+
+.postActions {
+    display: flex;
+    gap: 12px;
+    padding-top: 16px;
+    border-top: 1px solid #e5e7eb;
+}
+
+.actionButton {
+    padding: 8px 16px;
+    background-color: #f3f4f6;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    color: #374151;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.actionButton:hover {
+    background-color: #e5e7eb;
+    border-color: #9ca3af;
+}
+
+.actionButton:first-child {
+    background-color: #dc2626;
+    color: white;
+    border-color: #dc2626;
+}
+
+.actionButton:first-child:hover {
+    background-color: #b91c1c;
+    border-color: #b91c1c;
+}
+
+

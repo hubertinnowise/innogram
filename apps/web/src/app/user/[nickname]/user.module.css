@@ -1,0 +1,94 @@
+.userProfile {
+    width: 45vw;
+    margin: 0 auto;
+    padding: 24px;
+    border: 1px solid lightgray;
+    border-radius: 8px;
+    background-color: white;
+}
+
+.profileContent {
+    margin-top: 16px;
+}
+
+.userProfile h1 {
+    color: #374151;
+    margin-bottom: 16px;
+}
+
+.userProfile p {
+    color: #6b7280;
+    line-height: 1.6;
+}
+
+.profileActions {
+    margin-top: 16px;
+    display: flex;
+    gap: 12px;
+}
+
+.settingsLink {
+    display: inline-block;
+    padding: 8px 16px;
+    background-color: #dc2626;
+    color: white;
+    text-decoration: none;
+    border-radius: 6px;
+    font-weight: 500;
+    transition: background-color 0.2s;
+}
+
+.settingsLink:hover {
+    background-color: #b91c1c;
+}
+
+.samplePosts {
+    margin: 20px 0;
+    padding: 16px;
+    background-color: #f9fafb;
+    border-radius: 6px;
+    border: 1px solid #e5e7eb;
+}
+
+.samplePosts h3 {
+    color: #374151;
+    font-size: 18px;
+    font-weight: 600;
+    margin-bottom: 12px;
+}
+
+.postList {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.postLink {
+    color: #dc2626;
+    text-decoration: none;
+    font-weight: 500;
+    padding: 8px 12px;
+    border-radius: 4px;
+    transition: all 0.2s;
+}
+
+.postLink:hover {
+    background-color: #fef2f2;
+    color: #b91c1c;
+    text-decoration: underline;
+}
+
+.createPostLink {
+    display: inline-block;
+    padding: 8px 16px;
+    background-color: #10b981;
+    color: white;
+    text-decoration: none;
+    border-radius: 6px;
+    font-weight: 500;
+    transition: background-color 0.2s;
+}
+
+.createPostLink:hover {
+    background-color: #059669;
+}

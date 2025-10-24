@@ -2,53 +2,49 @@
 
 import { ReactNode, useState, useEffect } from 'react';
 
-import { Toaster } from '@/ui-shared/components/toaster';
 import { Button } from '@/ui-shared/components/button/button';
+import { LoginModal, RegisterModal, LogoutModal } from '../components/auth';
 
 import '../styles/global.css';
+import '../styles/page.css';
 import Link from 'next/link';
 
-import { CameraIcon } from '@heroicons/react/24/outline';
-import { XMarkIcon } from '@heroicons/react/24/outline';
+import { CameraIcon, PlusCircleIcon, ArrowRightEndOnRectangleIcon, ChatBubbleBottomCenterTextIcon, InboxIcon } from '@heroicons/react/24/outline';
 import { MagnifyingGlassIcon } from '@heroicons/react/24/outline';
 
 export default function RootLayout({ children }: { children: ReactNode }) {
-    const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
-    const [isRegisterModalOpen, setIsRegisterModalOpen] = useState(false);
-    const [email, setEmail] = useState('');
-    const [password, setPassword] = useState('');
-    const [confirmPassword, setConfirmPassword] = useState('');
-    const [name, setName] = useState('');
-    const [searchQuery, setSearchQuery] = useState('');
+    const [activeModal, setActiveModal] = useState<'login' | 'register' | 'logout' | null>(null);
     
-    const handleLogin = (e: React.FormEvent) => {
-        e.preventDefault();
+    const [searchQuery, setSearchQuery] = useState('');
+    const [userNickname, setUserNickname] = useState<string | null>(null);
+    
+    const handleLogin = (email: string, password: string) => {
         console.log('Login attempt:', { email, password });
         // Add your login logic here
-        setIsLoginModalOpen(false);
-        setEmail('');
-        setPassword('');
+        
+        // For demo purposes, set a mock user nickname
+        setUserNickname('john_doe');
+        setActiveModal(null);
     };
     
-    const handleRegister = (e: React.FormEvent) => {
-        e.preventDefault();
+    const handleRegister = (name: string, email: string, password: string, confirmPassword: string) => {
         console.log('Register attempt:', { name, email, password, confirmPassword });
         // Add your register logic here
-        setIsRegisterModalOpen(false);
-        setName('');
-        setEmail('');
-        setPassword('');
-        setConfirmPassword('');
+        setActiveModal(null);
     };
     
     const openRegisterModal = () => {
-        setIsLoginModalOpen(false);
-        setIsRegisterModalOpen(true);
+        setActiveModal('register');
     };
     
     const openLoginModal = () => {
-        setIsRegisterModalOpen(false);
-        setIsLoginModalOpen(true);
+        setActiveModal('login');
+    };
+    
+    const handleLogout = () => {
+        // Custom logout logic here
+        setUserNickname(null);
+        setActiveModal(null);
     };
     
     const handleSearch = (e: React.FormEvent) => {
@@ -61,10 +57,10 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         <html>
             <body>
                 <header>
-                    <div>
+                    <Link href="/" className="logo-link">
                         <CameraIcon className="size-12" />
                         <p>Innogram</p>
-                    </div>
+                    </Link>
                     <form onSubmit={handleSearch} className="search-form">
                         <div className="search-container">
                             <MagnifyingGlassIcon className="search-icon" />
@@ -80,130 +76,69 @@ export default function RootLayout({ children }: { children: ReactNode }) {
                     <div>
                         <Link href="/">Home</Link>
                         <Link href="/about">About</Link>
+                        
+                        {userNickname ? (
+                            <div className="flex items-center gap-4">
+                                <Link href="/messages" className="flex items-center gap-2">
+                                    <ChatBubbleBottomCenterTextIcon className="h-5 w-5" />
+                                </Link>
+                                <Link href="/notifications" className="flex items-center gap-2">
+                                    <InboxIcon className="h-5 w-5" />
+                                </Link>
+                                <Link href="/posts/new" className="flex items-center gap-2">
+                                    <PlusCircleIcon className="h-5 w-5" />
+                                </Link>
+                                <Link href={`/user/${userNickname}` as any}>
+                                    {userNickname}
+                                </Link>
+                                <Button 
+                                    onClick={() => setActiveModal('logout')}
+                                    className="logout-button"
+                                >
+                                    <ArrowRightEndOnRectangleIcon className="h-5 w-5" />
+                                </Button>
+                            </div>
+                        ) : (
                         <Button 
-                            onClick={() => setIsLoginModalOpen(true)}
+                            onClick={() => setActiveModal('login')}
                             className="login-button"
                         >
                             Login
                         </Button>
+                        )}
                     </div>
                 </header>
                 <main>{children}</main> 
                 <footer>© 2025 Innogram</footer>
-                <div className="absolute bottom-10 right-10">
-                    <Toaster />
-                </div>
                 
-                {isLoginModalOpen && (
-                    <div className="modal-overlay" onClick={() => setIsLoginModalOpen(false)}>
+                {activeModal && (
+                    <div className="modal-overlay" onClick={() => setActiveModal(null)}>
                         <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-                            <div className="modal-header">
-                                <h2>Login</h2>
-                                <button 
-                                    className="close-button"
-                                    onClick={() => setIsLoginModalOpen(false)}
-                                >
-                                    <XMarkIcon className="size-6" />
-                                </button>
-                            </div>
-                            <form onSubmit={handleLogin} className="login-form">
-                                <div className="form-group">
-                                    <label htmlFor="email">Email</label>
-                                    <input
-                                        type="email"
-                                        id="email"
-                                        value={email}
-                                        onChange={(e) => setEmail(e.target.value)}
-                                        required
-                                        className="form-input"
-                                    />
-                                </div>
-                                <div className="form-group">
-                                    <label htmlFor="password">Password</label>
-                                    <input
-                                        type="password"
-                                        id="password"
-                                        value={password}
-                                        onChange={(e) => setPassword(e.target.value)}
-                                        required
-                                        className="form-input"
-                                    />
-                                </div>
-                                <Button type="submit" className="submit-button">
-                                    Login
-                                </Button>
-                            </form>
-                            <div className="modal-footer">
-                                <p>Don't have an account? <span className="link-text" onClick={openRegisterModal}>Register here</span></p>
-                            </div>
-                        </div>
-                    </div>
-                )}
-                
-                {isRegisterModalOpen && (
-                    <div className="modal-overlay" onClick={() => setIsRegisterModalOpen(false)}>
-                        <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-                            <div className="modal-header">
-                                <h2>Register</h2>
-                                <button 
-                                    className="close-button"
-                                    onClick={() => setIsRegisterModalOpen(false)}
-                                >
-                                    <XMarkIcon className="size-6" />
-                                </button>
-                            </div>
-                            <form onSubmit={handleRegister} className="login-form">
-                                <div className="form-group">
-                                    <label htmlFor="register-name">Name</label>
-                                    <input
-                                        type="text"
-                                        id="register-name"
-                                        value={name}
-                                        onChange={(e) => setName(e.target.value)}
-                                        required
-                                        className="form-input"
-                                    />
-                                </div>
-                                <div className="form-group">
-                                    <label htmlFor="register-email">Email</label>
-                                    <input
-                                        type="email"
-                                        id="register-email"
-                                        value={email}
-                                        onChange={(e) => setEmail(e.target.value)}
-                                        required
-                                        className="form-input"
-                                    />
-                                </div>
-                                <div className="form-group">
-                                    <label htmlFor="register-password">Password</label>
-                                    <input
-                                        type="password"
-                                        id="register-password"
-                                        value={password}
-                                        onChange={(e) => setPassword(e.target.value)}
-                                        required
-                                        className="form-input"
-                                    />
-                                </div>
-                                <div className="form-group">
-                                    <label htmlFor="confirm-password">Confirm Password</label>
-                                    <input
-                                        type="password"
-                                        id="confirm-password"
-                                        value={confirmPassword}
-                                        onChange={(e) => setConfirmPassword(e.target.value)}
-                                        required
-                                        className="form-input"
-                                    />
-                                </div>
-                                <Button type="submit" className="submit-button">
-                                    Register
-                                </Button>
-                            </form>
-                            <div className="modal-footer">
-                                <p>Already have an account? <span className="link-text" onClick={openLoginModal}>Login here</span></p>
-                            </div>
+                            {activeModal === 'login' && (
+                                <LoginModal 
+                                    isOpen={true}
+                                    onClose={() => setActiveModal(null)}
+                                    onLogin={handleLogin}
+                                    onSwitchToRegister={openRegisterModal}
+                                />
+                            )}
+                            
+                            {activeModal === 'register' && (
+                                <RegisterModal 
+                                    isOpen={true}
+                                    onClose={() => setActiveModal(null)}
+                                    onRegister={handleRegister}
+                                    onSwitchToLogin={openLoginModal}
+                                />
+                            )}
+                            
+                            {activeModal === 'logout' && (
+                                <LogoutModal 
+                                    isOpen={true}
+                                    onClose={() => setActiveModal(null)}
+                                    onLogout={handleLogout}
+                                />
+                            )}
                         </div>
                     </div>
                 )}
