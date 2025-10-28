@@ -45,7 +45,7 @@ export function LogoutModal({ isOpen, onClose, onLogout }: LogoutModalProps) {
                     onClick={onClose}
                     className={styles.cancelButton}
                 >
-                    No, take me back
+                    Cancel
                 </button>
             </div>
         </>

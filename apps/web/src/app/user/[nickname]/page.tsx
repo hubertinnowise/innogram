@@ -1,5 +1,6 @@
-import styles from './user.module.css';
+import './user.css';
 import Link from 'next/link';
+import { LinkIcon, CalendarIcon } from '@heroicons/react/24/outline';
 
 interface UserPageProps {
     params: {
@@ -10,36 +11,62 @@ interface UserPageProps {
 export default function UserPage({ params }: UserPageProps) {
     const { nickname } = params;
     
+    const samplePosts = [
+        'https://images.unsplash.com/photo-1461749280684-dccba630e2f6?w=300&h=300&fit=crop',
+        'https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=300&h=300&fit=crop',
+        'https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=300&h=300&fit=crop',
+        'https://images.unsplash.com/photo-1519904981063-b0cf448d479e?w=300&h=300&fit=crop',
+        'https://images.unsplash.com/photo-1447752875215-b2761acb3c5d?w=300&h=300&fit=crop',
+        'https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?w=300&h=300&fit=crop',
+        'https://images.unsplash.com/photo-1501594907352-04cda38ebc29?w=300&h=300&fit=crop'
+    ];
+    
     return (
-        <div className={styles.userProfile}>
-            <h1>User Profile: {nickname}</h1>
-            <div className={styles.profileContent}>
-                <p>Welcome to {nickname}'s profile!</p>
-                
-                <div className={styles.samplePosts}>
-                    <h3>Recent Posts</h3>
-                    <div className={styles.postList}>
-                        <Link href="/posts/1" className={styles.postLink}>
-                            Sample Post 1
-                        </Link>
-                        <Link href="/posts/2" className={styles.postLink}>
-                            Sample Post 2
-                        </Link>
-                        <Link href="/posts/3" className={styles.postLink}>
-                            Sample Post 3
-                        </Link>
+        <div className="user-page">
+            <div className="user-header"> 
+                <div className="user-avatar">
+                    <img src="https://i.pravatar.cc/40" alt="User Avatar" />
+                </div>
+
+                <div className="user-details">
+                    <h2>Username</h2>
+                    <div>
+                        <p>Posts: 7</p>
+                        <p>Followers: 100</p>
+                        <p>Following: 100</p>
                     </div>
                 </div>
-                
-                <div className={styles.profileActions}>
-                    <Link href="/posts/new" className={styles.createPostLink}>
-                        Create Post
-                    </Link>
-                    <Link href={`/user/${nickname}/settings` as any} className={styles.settingsLink}>
-                        Settings
-                    </Link>
+            </div>
+
+            <div className="user-info">
+                <p>Lorem ipsum dolor sit amet consectetur adipisicing elit. Quisquam, quos.</p>
+                <p className="joined-info">
+                    <CalendarIcon className="calendar-icon" />
+                    Joined: 01-01-2025
+                </p>
+                <p>
+                    <a href="https://www.google.com" target="_blank" rel="noopener noreferrer" className="website-link">
+                        <LinkIcon className="link-icon" />
+                        samplewebsite.com
+                    </a>
+                </p>
+            </div>
+            <div className="user-actions">
+                <button>Follow</button>
+                <button>Message</button>
+            </div>
+
+            <div className="user-posts">    
+                <div className="posts-grid">
+                    {samplePosts.map((imageUrl, index) => (
+                        <img 
+                            key={index} 
+                            src={imageUrl} 
+                            alt={`Post ${index + 1}`} 
+                            className="post-image" 
+                        />
+                    ))}
                 </div>
-                {/* Add more profile content here */}
             </div>
         </div>
     );

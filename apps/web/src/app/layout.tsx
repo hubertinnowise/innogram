@@ -20,8 +20,6 @@ export default function RootLayout({ children }: { children: ReactNode }) {
     
     const handleLogin = (email: string, password: string) => {
         console.log('Login attempt:', { email, password });
-        // Add your login logic here
-        
         // For demo purposes, set a mock user nickname
         setUserNickname('john_doe');
         setActiveModal(null);
@@ -79,17 +77,21 @@ export default function RootLayout({ children }: { children: ReactNode }) {
                         
                         {userNickname ? (
                             <div className="flex items-center gap-4">
-                                <Link href="/messages" className="flex items-center gap-2">
+                                <Link href={`/user/${userNickname}/chats` as any} className="flex items-center gap-2">
                                     <ChatBubbleBottomCenterTextIcon className="h-5 w-5" />
                                 </Link>
-                                <Link href="/notifications" className="flex items-center gap-2">
+                                <Link href={`/user/${userNickname}/notifications` as any} className="flex items-center gap-2">
                                     <InboxIcon className="h-5 w-5" />
                                 </Link>
                                 <Link href="/posts/new" className="flex items-center gap-2">
                                     <PlusCircleIcon className="h-5 w-5" />
                                 </Link>
-                                <Link href={`/user/${userNickname}` as any}>
-                                    {userNickname}
+                                <Link href={`/user/${userNickname}` as any} className="flex items-center">
+                                    <img 
+                                        src="https://i.pravatar.cc/40" 
+                                        alt="profile-picture" 
+                                        className="h-6 w-6 rounded-full object-cover"
+                                    />
                                 </Link>
                                 <Button 
                                     onClick={() => setActiveModal('logout')}
