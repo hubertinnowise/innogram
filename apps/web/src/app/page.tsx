@@ -100,12 +100,17 @@ export default function RootPage() {
                                 </div>
                             )}
                         </div>
-                        <div className="post-stats">
-                            <HeartIcon className="size-6" /><span style={{ marginLeft: '4px' }}>{post.likesCount}</span>
-                            <ChatBubbleLeftIcon className="size-6" style={{ marginLeft: '4px' }} /><span style={{ marginLeft: '4px' }}>{post.commentsCount}</span>
-                            <CalendarIcon className="size-6" style={{ marginLeft: 'auto' }} /><span style={{ marginLeft: '4px' }}>{post.createdAt.toLocaleDateString()}</span>
+                        <div className="post-info">
+                            <div className="post-stats">
+                                <HeartIcon className="size-6" /><span style={{ marginLeft: '4px' }}>{post.likesCount}</span>
+                                <ChatBubbleLeftIcon className="size-6" style={{ marginLeft: '4px' }} /><span style={{ marginLeft: '4px' }}>{post.commentsCount}</span>
+                                <CalendarIcon className="size-6" style={{ marginLeft: 'auto' }} /><span style={{ marginLeft: '4px' }}>{post.createdAt.toLocaleDateString()}</span>
+                            </div>
+                            <p>{post.content}</p>
+                            <div className="add-comment">
+                                <span className="add-comment-text">Add comment...</span>
+                            </div>
                         </div>
-                        <p>{post.content}</p>
                     </div>
                 ))}
             </div>

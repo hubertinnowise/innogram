@@ -70,9 +70,6 @@
 }
 
 .user-posts {
-    border: 1px solid lightgray;
-    border-radius: 8px;
-    padding: 24px;
 }
 
 .user-posts h3 {
@@ -88,16 +85,15 @@
     gap: 1rem;
 }
 
-.post-image {
+.user-posts .post-image {
     width: 100%;
     height: 240px;
     object-fit: cover;
-    border-radius: 8px;
     cursor: pointer;
     transition: filter 0.3s ease;
 }
 
-.post-image:hover {
+.user-posts .post-image:hover {
     filter: brightness(0.7);
 }
 
