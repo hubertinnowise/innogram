@@ -1,5 +1,6 @@
 import styles from './post.module.css';
 import Link from 'next/link';
+import { HeartIcon, ChatBubbleLeftIcon, CalendarIcon } from '@heroicons/react/24/outline';
 
 interface PostPageProps {
     params: {
@@ -13,38 +14,70 @@ export default function PostPage({ params }: PostPageProps) {
     // Mock post data - in real app, this would come from API
     const post = {
         id: id,
-        title: "Sample Post Title",
-        content: "This is a sample post content. In a real application, this would be fetched from your database based on the post ID.",
-        author: {
-            nickname: "john_doe",
-            name: "John Doe"
-        },
-        createdAt: "2025-01-21",
-        likes: 42,
-        comments: 8
+        authorId: 'user-1',
+        avatarUrl: 'https://i.pravatar.cc/40?img=1',
+        content: 'Just had an amazing sunset at the beach!',
+        media: [
+            {
+                id: 'media-1',
+                type: 'IMAGE',
+                url: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800',
+                position: 0,
+                width: 1920,
+                height: 1080
+            }
+        ],
+        likesCount: 42,
+        commentsCount: 8,
+        createdAt: new Date('2024-01-15T10:30:00Z'),
+        updatedAt: new Date('2024-01-15T10:30:00Z'),
+        category: 'photography'
     };
     
     return (
         <div className={styles.postContainer}>
             <div className={styles.postHeader}>
-                <h1 className={styles.postTitle}>{post.title}</h1>
+                <div className={styles.authorInfo}>
+                    <img 
+                        src={post.avatarUrl} 
+                        alt="Author avatar" 
+                        className={styles.authorAvatar}
+                    />
+                    <Link href={`/user/${post.authorId}`} className={styles.authorLink}>
+                        <span className={styles.author}>{post.authorId}</span>
+                    </Link>
+                </div>
                 <div className={styles.postMeta}>
-                    <span className={styles.postDate}>{post.createdAt}</span>
-                    <span className={styles.postStats}>
-                        {post.likes} likes • {post.comments} comments
-                    </span>
+                    <CalendarIcon className={styles.icon} />
+                    <span className={styles.postDate}>{post.createdAt.toLocaleDateString()}</span>
                 </div>
             </div>
             
-            <div className={styles.postContent}>
-                <p>{post.content}</p>
-            </div>
+            {post.media.length > 0 && (
+                <div className={styles.postMedia}>
+                    {post.media.map((media) => (
+                        <img 
+                            key={media.id} 
+                            src={media.url} 
+                            alt="Post media" 
+                            className={styles.postImage}
+                        />
+                    ))}
+                </div>
+            )}
             
-            <div className={styles.postAuthor}>
-                <h3>Author</h3>
-                <Link href={`/user/${post.author.nickname}`} className={styles.authorLink}>
-                    {post.author.name} (@{post.author.nickname})
-                </Link>
+            <div className={styles.postInfo}>
+                <div className={styles.postStats}>
+                    <div className={styles.statItem}>
+                        <HeartIcon className={styles.icon} />
+                        <span>{post.likesCount}</span>
+                    </div>
+                    <div className={styles.statItem}>
+                        <ChatBubbleLeftIcon className={styles.icon} />
+                        <span>{post.commentsCount}</span>
+                    </div>
+                </div>
+                <p className={styles.postContent}>{post.content}</p>
             </div>
             
             <div className={styles.postActions}>

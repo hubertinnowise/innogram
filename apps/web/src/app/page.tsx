@@ -1,10 +1,16 @@
+'use client';
+
 import '../styles/page.css';
 
+import { useState } from 'react';
 import { HeartIcon } from '@heroicons/react/24/outline';
+import { HeartIcon as HeartIconSolid } from '@heroicons/react/24/solid';
 import { ChatBubbleLeftIcon } from '@heroicons/react/24/outline';
 import { CalendarIcon } from '@heroicons/react/24/outline';
+import Link from 'next/link';
 
 export default function RootPage() {
+    const [likedPosts, setLikedPosts] = useState<Record<string, boolean>>({});
     let posts = [
         {
             id: '1',
@@ -71,47 +77,73 @@ export default function RootPage() {
         }
     ]
     
+    const toggleLike = (postId: string, e: React.MouseEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setLikedPosts(prev => ({
+            ...prev,
+            [postId]: !prev[postId]
+        }));
+    };
+    
     return (
         <div className="root-page">
             <div className="posts-list">
                 {posts.map((post) => (
-                    <div key={post.id} className="post-item">
-                        <div className="post-header">
-                            <div className="author-info">
-                                <img 
-                                    src={post.avatarUrl} 
-                                    alt="Author avatar" 
-                                    className="author-avatar"
-                                />
-                                <span className="author">{post.authorId}</span>
-                            </div>
-                        </div>
-                        <div className="post-content">
-                            {post.media.length > 0 && (
-                                <div className="post-media">
-                                    {post.media.map((media) => (
-                                        <img 
-                                            key={media.id} 
-                                            src={media.url} 
-                                            alt="Post media" 
-                                            className="post-image"
-                                        />
-                                    ))}
+                    <Link key={post.id} href={`/posts/${post.id}`} className="post-item-link">
+                        <div className="post-item">
+                            <div className="post-header">
+                                <div className="author-info">
+                                    <img 
+                                        src={post.avatarUrl} 
+                                        alt="Author avatar" 
+                                        className="author-avatar"
+                                    />
+                                    <span className="author">{post.authorId}</span>
                                 </div>
-                            )}
-                        </div>
-                        <div className="post-info">
-                            <div className="post-stats">
-                                <HeartIcon className="size-6" /><span style={{ marginLeft: '4px' }}>{post.likesCount}</span>
-                                <ChatBubbleLeftIcon className="size-6" style={{ marginLeft: '4px' }} /><span style={{ marginLeft: '4px' }}>{post.commentsCount}</span>
-                                <CalendarIcon className="size-6" style={{ marginLeft: 'auto' }} /><span style={{ marginLeft: '4px' }}>{post.createdAt.toLocaleDateString()}</span>
+                                <div className="post-date-header">
+                                    <CalendarIcon className="post-date-icon" />
+                                    <span className="post-date-text">{post.createdAt.toLocaleDateString()}</span>
+                                </div>
                             </div>
-                            <p>{post.content}</p>
-                            <div className="add-comment">
-                                <span className="add-comment-text">Add comment...</span>
+                            <div className="post-content">
+                                {post.media.length > 0 && (
+                                    <div className="post-media">
+                                        {post.media.map((media) => (
+                                            <img 
+                                                key={media.id} 
+                                                src={media.url} 
+                                                alt="Post media" 
+                                                className="post-image"
+                                            />
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                            <div className="post-info">
+                                <div className="post-stats">
+                                    <div 
+                                        className="like-button"
+                                        onClick={(e) => toggleLike(post.id, e)}
+                                    >
+                                        {likedPosts[post.id] ? (
+                                            <HeartIconSolid className="size-6 heart-icon-liked" />
+                                        ) : (
+                                            <HeartIcon className="size-6 heart-icon" />
+                                        )}
+                                        <span style={{ marginLeft: '4px' }}>
+                                            {likedPosts[post.id] ? post.likesCount + 1 : post.likesCount}
+                                        </span>
+                                    </div>
+                                    <ChatBubbleLeftIcon className="size-6" style={{ marginLeft: '4px' }} /><span style={{ marginLeft: '4px' }}>{post.commentsCount}</span>
+                                </div>
+                                <p>{post.content}</p>
+                                <div className="add-comment">
+                                    <span className="add-comment-text">Add comment...</span>
+                                </div>
                             </div>
                         </div>
-                    </div>
+                    </Link>
                 ))}
             </div>
         </div>

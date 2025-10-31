@@ -2,8 +2,6 @@
     width: 60vw;
     margin: 0 auto;
     padding: 24px;
-    border: 1px solid lightgray;
-    border-radius: 8px;
     background-color: white;
 }
 
@@ -85,7 +83,6 @@
 
 .settingsSection {
     padding: 24px;
-    border: 1px solid #e5e7eb;
     border-radius: 8px;
     background-color: #f9fafb;
 }

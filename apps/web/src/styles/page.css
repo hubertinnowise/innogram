@@ -16,8 +16,30 @@
     margin-bottom: 8px;
 }
 
+.like-button {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    user-select: none;
+}
+
+.heart-icon {
+    transition: color 0.2s;
+}
+
+.heart-icon:hover {
+    color: #dc2626;
+}
+
+.heart-icon-liked {
+    color: #dc2626;
+}
+
 .post-header {
     padding: 16px 24px 16px 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
 }
 
 .post-info {
@@ -43,10 +65,39 @@
     color: #374151;
 }
 
+.post-date-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #6b7280;
+    font-size: 14px;
+}
+
+.post-date-icon {
+    width: 20px;
+    height: 20px;
+}
+
+.post-date-text {
+    color: #6b7280;
+}
+
+.post-item-link {
+    text-decoration: none;
+    color: inherit;
+    display: block;
+}
+
 .post-item {
     width: 50vw;
     border: 1px solid lightgray;
     border-radius: 8px;
+    cursor: pointer;
+    transition: box-shadow 0.2s;
+}
+
+.post-item:hover {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 .post-media {
@@ -61,7 +112,8 @@
     transition: filter 0.3s ease;
 }
 
-.post-image:hover {
+.post-item:hover .post-image,
+.post-item-link:hover .post-image {
     filter: brightness(0.7);
 }
 

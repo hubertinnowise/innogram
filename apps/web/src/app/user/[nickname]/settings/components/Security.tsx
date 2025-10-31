@@ -16,23 +16,24 @@ export default function Security() {
         setError('');
         setSuccess('');
         
-        // Validate password if trying to change it
-        if (newPassword && newPassword !== confirmPassword) {
+        // Validate all fields are filled
+        if (!currentPassword || !newPassword || !confirmPassword) {
+            setError('All fields are required.');
+            return;
+        }
+        
+        // Validate new password matches confirm password
+        if (newPassword !== confirmPassword) {
             setError('New passwords do not match.');
             return;
         }
-
-        if (newPassword && !currentPassword) {
-            setError('Please enter your current password to change it.');
-            return;
-        }
+        
+        // TODO: Validate current password against actual password (to be added later)
         
         setIsSubmitting(true);
         
         // Mock submission - in real app, this would call your API
-        console.log('Changing password:', {
-            passwordChanged: !!newPassword
-        });
+        console.log('Changing password');
         
         // Simulate API call
         await new Promise(resolve => setTimeout(resolve, 1000));
@@ -48,12 +49,9 @@ export default function Security() {
 
     return (
         <div className={styles.tabContent}>
-            <form onSubmit={(e) => e.preventDefault()} className={styles.settingsForm}>
+            <form onSubmit={handleSubmit} className={styles.settingsForm}>
                 <div className={styles.settingsSection}>
                     <h3>Change Password</h3>
-                    <p className={styles.sectionDescription}>
-                        Leave blank if you don't want to change your password.
-                    </p>
                     
                     <div className={styles.formGroup}>
                         <label htmlFor="currentPassword" className={styles.label}>
@@ -66,6 +64,7 @@ export default function Security() {
                             onChange={(e) => setCurrentPassword(e.target.value)}
                             className={styles.input}
                             placeholder="Enter current password"
+                            required
                         />
                     </div>
 
@@ -80,6 +79,7 @@ export default function Security() {
                             onChange={(e) => setNewPassword(e.target.value)}
                             className={styles.input}
                             placeholder="Enter new password"
+                            required
                         />
                     </div>
 
@@ -94,6 +94,7 @@ export default function Security() {
                             onChange={(e) => setConfirmPassword(e.target.value)}
                             className={styles.input}
                             placeholder="Confirm new password"
+                            required
                         />
                     </div>
 
@@ -111,12 +112,11 @@ export default function Security() {
 
                     <div className={styles.formActions}>
                         <button
-                            type="button"
-                            onClick={handleSubmit}
+                            type="submit"
                             className={styles.submitButton}
                             disabled={isSubmitting}
                         >
-                            {isSubmitting ? 'Saving...' : 'Save Changes'}
+                            {isSubmitting ? 'Changing...' : 'Change Password'}
                         </button>
                     </div>
                 </div>
