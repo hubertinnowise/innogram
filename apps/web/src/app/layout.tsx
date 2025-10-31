@@ -10,12 +10,11 @@ import '../styles/page.css';
 import Link from 'next/link';
 
 import { CameraIcon, PlusCircleIcon, ArrowRightEndOnRectangleIcon, ChatBubbleBottomCenterTextIcon, InboxIcon } from '@heroicons/react/24/outline';
-import { MagnifyingGlassIcon } from '@heroicons/react/24/outline';
+import SearchBar from '../components/SearchBar';
 
 export default function RootLayout({ children }: { children: ReactNode }) {
     const [activeModal, setActiveModal] = useState<'login' | 'register' | 'logout' | null>(null);
     
-    const [searchQuery, setSearchQuery] = useState('');
     const [userNickname, setUserNickname] = useState<string | null>(null);
     
     const handleLogin = (email: string, password: string) => {
@@ -45,11 +44,6 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         setActiveModal(null);
     };
     
-    const handleSearch = (e: React.FormEvent) => {
-        e.preventDefault();
-        console.log('Search query:', searchQuery);
-        // Add your search logic here
-    };
     
     return (
         <html>
@@ -59,34 +53,22 @@ export default function RootLayout({ children }: { children: ReactNode }) {
                         <CameraIcon className="size-12" />
                         <p>Innogram</p>
                     </Link>
-                    <form onSubmit={handleSearch} className="search-form">
-                        <div className="search-container">
-                            <MagnifyingGlassIcon className="search-icon" />
-                            <input
-                                type="text"
-                                placeholder="Search..."
-                                value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
-                                className="search-input"
-                            />
-                        </div>
-                    </form>
-                    <div>
+                    <div className="header-nav">
+                        <SearchBar />
                         <Link href="/">Home</Link>
                         <Link href="/about">About</Link>
-                        
                         {userNickname ? (
-                            <div className="flex items-center gap-4">
-                                <Link href={`/user/${userNickname}/chats` as any} className="flex items-center gap-2">
+                            <>
+                                <Link href={`/user/${userNickname}/chats`} className="flex items-center gap-2">
                                     <ChatBubbleBottomCenterTextIcon className="h-5 w-5" />
                                 </Link>
-                                <Link href={`/user/${userNickname}/notifications` as any} className="flex items-center gap-2">
+                                <Link href={`/user/${userNickname}/notifications`} className="flex items-center gap-2">
                                     <InboxIcon className="h-5 w-5" />
                                 </Link>
                                 <Link href="/posts/new" className="flex items-center gap-2">
                                     <PlusCircleIcon className="h-5 w-5" />
                                 </Link>
-                                <Link href={`/user/${userNickname}` as any} className="flex items-center">
+                                <Link href={`/user/${userNickname}`} className="flex items-center">
                                     <img 
                                         src="https://i.pravatar.cc/40" 
                                         alt="profile-picture" 
@@ -99,14 +81,14 @@ export default function RootLayout({ children }: { children: ReactNode }) {
                                 >
                                     <ArrowRightEndOnRectangleIcon className="h-5 w-5" />
                                 </Button>
-                            </div>
+                            </>
                         ) : (
-                        <Button 
-                            onClick={() => setActiveModal('login')}
-                            className="login-button"
-                        >
-                            Login
-                        </Button>
+                            <Button 
+                                onClick={() => setActiveModal('login')}
+                                className="login-button"
+                            >
+                                Login
+                            </Button>
                         )}
                     </div>
                 </header>
