@@ -73,6 +73,7 @@
 }
 
 .textarea {
+    background-color: #f8f9fa;
     resize: vertical;
     min-height: 120px;
 }
@@ -190,8 +191,6 @@
     display: flex;
     gap: 12px;
     justify-content: center;
-    padding-top: 16px;
-    border-top: 1px solid #e5e7eb;
 }
 
 .cancelButton {

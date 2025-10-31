@@ -36,15 +36,15 @@ model User {
   phoneNumber  String   @unique // moze byc array of phone nums?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
- 
+  
   role UserRole @default(REGULAR)
   @@index([role])
- 
+  
   bio          String?  @db.VarChar(500)
- 
-  deletedAt    DateTime?
 
+  deletedAt    DateTime?
   isBanned     Boolean   @default(false)
+
   bannedOn     DateTime?
   bannedUntil  DateTime?     // null => permanent
   banReason    String?
