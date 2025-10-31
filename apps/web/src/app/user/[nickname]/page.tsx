@@ -1,6 +1,6 @@
 import './user.css';
 import Link from 'next/link';
-import { LinkIcon, CalendarIcon } from '@heroicons/react/24/outline';
+import { LinkIcon, CalendarIcon, Cog6ToothIcon } from '@heroicons/react/24/outline';
 
 interface UserPageProps {
     params: {
@@ -10,6 +10,7 @@ interface UserPageProps {
 
 export default function UserPage({ params }: UserPageProps) {
     const { nickname } = params;
+    const settingsPath = `/user/${nickname}/settings`;
     
     const samplePosts = [
         'https://images.unsplash.com/photo-1461749280684-dccba630e2f6?w=300&h=300&fit=crop',
@@ -36,6 +37,10 @@ export default function UserPage({ params }: UserPageProps) {
                         <p>Following: 100</p>
                     </div>
                 </div>
+
+                <Link href={settingsPath as any} className="settings-link">
+                    <Cog6ToothIcon className="settings-icon" />
+                </Link>
             </div>
 
             <div className="user-info">
