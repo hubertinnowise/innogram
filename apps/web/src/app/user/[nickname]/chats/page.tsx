@@ -150,9 +150,6 @@ export default function UserChatsPage() {
                       <h3 className="username">
                         {chat.username}
                       </h3>
-                      <span className="timeText">
-                        {formatTime(chat.lastMessage.timestamp)}
-                      </span>
                     </div>
                     <p className={`messageContent ${
                       chat.unreadCount > 0 ? 'messageContentUnread' : 'messageContentRead'
@@ -160,6 +157,9 @@ export default function UserChatsPage() {
                       {chat.lastMessage.content}
                     </p>
                   </div>
+                  <span className="timeText">
+                    {formatTime(chat.lastMessage.timestamp)}
+                  </span>
                 </div>
               </Link>
             ))

@@ -84,11 +84,14 @@ export default function NewPostPage() {
 
     return (
         <div className="newPostContainer">
-            <div className="header">
-                <h2>Add New Post</h2>
-            </div>
-            
-            <form onSubmit={handleSubmit} className="postForm">
+            <div className="newPostWrapper">
+                <div className="header">
+                    <div className="headerInner">
+                        <h2>Add New Post</h2>
+                    </div>
+                </div>
+                
+                <form onSubmit={handleSubmit} className="postForm">
                 <div className="formGroup">
                     <label className="label">Images</label>
                     {images.length > 0 && (
@@ -161,6 +164,7 @@ export default function NewPostPage() {
                     </button>
                 </div>
             </form>
+            </div>
         </div>
     );
 }

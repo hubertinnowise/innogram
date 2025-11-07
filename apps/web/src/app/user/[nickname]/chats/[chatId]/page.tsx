@@ -1,7 +1,10 @@
 'use client';
 
 import { useParams } from 'next/navigation';
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
+import EmojiPicker, { EmojiClickData } from 'emoji-picker-react';
+import { FaceSmileIcon, PaperAirplaneIcon } from '@heroicons/react/24/outline';
+import './chat.css';
 
 interface Message {
   id: string;
@@ -51,11 +54,55 @@ export default function UserChatPage() {
   ]);
 
   const [newMessage, setNewMessage] = useState('');
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [otherUser] = useState<User>({
     id: userNickname,
     username: userNickname,
     profilePicture: 'https://i.pravatar.cc/40'
   });
+  
+  const [lastActive] = useState<Date>(new Date('2025-11-06T14:30:00'));
+  const messagesAreaRef = useRef<HTMLDivElement>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const emojiPickerRef = useRef<HTMLDivElement>(null);
+  const emojiButtonRef = useRef<HTMLButtonElement>(null);
+
+  const scrollToBottom = () => {
+    if (messagesAreaRef.current && messagesEndRef.current) {
+      messagesAreaRef.current.scrollTop = messagesAreaRef.current.scrollHeight;
+    }
+  };
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as Node;
+      if (
+        showEmojiPicker &&
+        emojiPickerRef.current &&
+        !emojiPickerRef.current.contains(target) &&
+        emojiButtonRef.current &&
+        !emojiButtonRef.current.contains(target)
+      ) {
+        setShowEmojiPicker(false);
+      }
+    };
+
+    if (showEmojiPicker) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showEmojiPicker]);
+
+  const onEmojiClick = (emojiData: EmojiClickData) => {
+    setNewMessage(prev => prev + emojiData.emoji);
+  };
 
   const handleSendMessage = (e: React.FormEvent) => {
     e.preventDefault();
@@ -78,68 +125,105 @@ export default function UserChatPage() {
     return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   };
 
+  const formatLastActive = (date: Date) => {
+    const now = new Date();
+    const diffInMinutes = Math.floor((now.getTime() - date.getTime()) / (1000 * 60));
+    
+    if (diffInMinutes < 1) return 'Active now';
+    if (diffInMinutes < 60) return `Active ${diffInMinutes}m ago`;
+    if (diffInMinutes < 1440) return `Active ${Math.floor(diffInMinutes / 60)}h ago`;
+    return `Active ${Math.floor(diffInMinutes / 1440)}d ago`;
+  };
+
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-4xl mx-auto bg-white shadow-sm">
+    <div className="chatContainer">
+      <div className="chatWrapper">
         {/* Header */}
-        <div className="border-b border-gray-200 p-4">
-          <div className="flex items-center gap-3">
+        <div className="singleChatHeader">
+          <div className="singleChatHeaderInner">
             <img 
               src={otherUser.profilePicture} 
               alt={otherUser.username}
-              className="h-10 w-10 rounded-full object-cover"
+              className="singleChatHeaderAvatar"
             />
-            <div>
-              <h1 className="text-lg font-semibold text-gray-900">
+            <div className="singleChatHeaderInfo">
+              <h1>
                 {otherUser.username}
               </h1>
-              <p className="text-sm text-gray-500">Online</p>
+              <p className="lastActive">
+                {formatLastActive(lastActive)}
+              </p>
             </div>
           </div>
         </div>
 
         {/* Messages */}
-        <div className="h-96 overflow-y-auto p-4 space-y-4">
+        <div className="messagesArea" ref={messagesAreaRef}>
           {messages.map((message) => (
             <div
               key={message.id}
-              className={`flex ${message.senderId === 'current-user' ? 'justify-end' : 'justify-start'}`}
+              className={`messageWrapper ${
+                message.senderId === 'current-user' ? 'messageWrapperSent' : 'messageWrapperReceived'
+              }`}
             >
+              {message.senderId !== 'current-user' && (
+                <img 
+                  src={otherUser.profilePicture} 
+                  alt={otherUser.username}
+                  className="messageAvatar"
+                />
+              )}
               <div
-                className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
+                className={`messageBubble ${
                   message.senderId === 'current-user'
-                    ? 'bg-blue-500 text-white'
-                    : 'bg-gray-200 text-gray-900'
+                    ? 'messageBubbleSent'
+                    : 'messageBubbleReceived'
                 }`}
               >
-                <p className="text-sm">{message.content}</p>
-                <p className={`text-xs mt-1 ${
+                <p className="messageContent">{message.content}</p>
+                <p className={`messageTime ${
                   message.senderId === 'current-user' 
-                    ? 'text-blue-100' 
-                    : 'text-gray-500'
+                    ? 'messageTimeSent' 
+                    : 'messageTimeReceived'
                 }`}>
                   {formatTime(message.timestamp)}
                 </p>
               </div>
             </div>
           ))}
+          <div ref={messagesEndRef} />
         </div>
 
         {/* Message Input */}
-        <div className="border-t border-gray-200 p-4">
-          <form onSubmit={handleSendMessage} className="flex gap-2">
+        <div className="messageInputArea">
+          <div className="emojiPickerContainer" ref={emojiPickerRef}>
+            {showEmojiPicker && (
+              <div className="emojiPickerWrapper">
+                <EmojiPicker onEmojiClick={onEmojiClick} />
+              </div>
+            )}
+          </div>
+          <form onSubmit={handleSendMessage} className="messageForm">
+            <button
+              type="button"
+              ref={emojiButtonRef}
+              onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+              className="emojiButton"
+            >
+              <FaceSmileIcon className="emojiIcon" />
+            </button>
             <input
               type="text"
               value={newMessage}
               onChange={(e) => setNewMessage(e.target.value)}
               placeholder="Type a message..."
-              className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="messageInput"
             />
             <button
               type="submit"
-              className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"
+              className="sendButton"
             >
-              Send
+              <PaperAirplaneIcon className="sendIcon" />
             </button>
           </form>
         </div>
