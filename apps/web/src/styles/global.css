@@ -70,6 +70,14 @@ header > div:last-child {
     gap: 16px;
 }
 
+.header-nav a {
+    text-decoration: none;
+}
+
+.header-nav a:hover {
+    text-decoration: none;
+}
+
 .search-wrapper {
     position: relative;
     display: flex;

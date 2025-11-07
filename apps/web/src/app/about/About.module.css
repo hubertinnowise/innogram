@@ -106,7 +106,9 @@
     align-items: center;
     gap: 0.5rem;
     padding: 1rem;
-    background-color: #f8f9fa;
+    background-color: white;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
     transition: all 0.3s ease;
     text-decoration: none;
     color: inherit;
@@ -114,7 +116,8 @@
 }
 
 .techItem:hover {
-    background-color: #e9ecef;
+    transform: translateY(-4px) scale(1.05);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
 .techItem i {
