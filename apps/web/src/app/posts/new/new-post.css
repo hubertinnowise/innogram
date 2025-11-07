@@ -6,21 +6,20 @@
 .newPostWrapper {
     width: 50vw;
     background-color: white;
-    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
 }
 
-.header {
+.newPostHeader {
     border-bottom: 1px solid #e5e7eb;
     padding: 16px 16px 0 0;
 }
 
-.headerInner {
+.newPostHeaderInner {
     display: flex;
     justify-content: space-between;
     align-items: center;
 }
 
-.header h2 {
+.newPostHeader h2 {
     color: #111827;
     font-size: 24px;
     font-weight: bold;
@@ -44,10 +43,7 @@
 .postForm {
     display: flex;
     flex-direction: column;
-    gap: 20px;
-}
-
-.postForm {
+    gap: 16px;
     padding-top: 16px;
 }
 
@@ -198,7 +194,7 @@
 .formActions {
     display: flex;
     gap: 12px;
-    justify-content: center;
+    justify-content: flex-end;
 }
 
 .cancelButton {
@@ -218,15 +214,17 @@
 }
 
 .submitButton {
-    padding: 10px 20px;
+    padding: 8px 16px;
+    min-width: 120px;
     background-color: #dc2626;
     border: 1px solid #dc2626;
     border-radius: 6px;
     color: white;
     font-weight: 500;
+    font-size: 14px;
     cursor: pointer;
     transition: all 0.2s;
-    width: 50%;
+    text-align: center;
 }
 
 .submitButton:hover:not(:disabled) {

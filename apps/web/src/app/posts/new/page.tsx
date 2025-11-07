@@ -85,8 +85,8 @@ export default function NewPostPage() {
     return (
         <div className="newPostContainer">
             <div className="newPostWrapper">
-                <div className="header">
-                    <div className="headerInner">
+                <div className="newPostHeader">
+                    <div className="newPostHeaderInner">
                         <h2>Add New Post</h2>
                     </div>
                 </div>
@@ -160,7 +160,7 @@ export default function NewPostPage() {
                         className="submitButton"
                         disabled={isSubmitting}
                     >
-                        {isSubmitting ? 'Adding...' : 'Add Post'}
+                        {isSubmitting ? 'Adding...' : 'Add'}
                     </button>
                 </div>
             </form>
