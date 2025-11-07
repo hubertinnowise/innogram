@@ -84,7 +84,7 @@
 .posts-grid {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: 1rem;
+    gap: 16px;
 }
 
 .user-posts .post-image {
