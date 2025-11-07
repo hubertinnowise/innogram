@@ -3,6 +3,7 @@
 import { useParams } from 'next/navigation';
 import { useState } from 'react';
 import Link from 'next/link';
+import './chats.css';
 
 interface Chat {
   id: string;
@@ -30,7 +31,7 @@ export default function UserChatsPage() {
       profilePicture: 'https://i.pravatar.cc/40?img=1',
       lastMessage: {
         content: 'Hey! How are you doing?',
-        timestamp: new Date('2024-01-15T14:30:00'),
+        timestamp: new Date('2025-11-06T10:30:00'),
         isRead: true
       },
       unreadCount: 0,
@@ -43,7 +44,7 @@ export default function UserChatsPage() {
       profilePicture: 'https://i.pravatar.cc/40?img=2',
       lastMessage: {
         content: 'Thanks for the help earlier!',
-        timestamp: new Date('2024-01-15T13:45:00'),
+        timestamp: new Date('2025-11-05T16:45:00'),
         isRead: false
       },
       unreadCount: 2,
@@ -56,7 +57,7 @@ export default function UserChatsPage() {
       profilePicture: 'https://i.pravatar.cc/40?img=3',
       lastMessage: {
         content: 'See you tomorrow!',
-        timestamp: new Date('2024-01-15T12:20:00'),
+        timestamp: new Date('2025-11-04T14:20:00'),
         isRead: true
       },
       unreadCount: 0,
@@ -69,7 +70,7 @@ export default function UserChatsPage() {
       profilePicture: 'https://i.pravatar.cc/40?img=4',
       lastMessage: {
         content: 'That was an amazing photo!',
-        timestamp: new Date('2024-01-15T11:15:00'),
+        timestamp: new Date('2025-11-03T11:15:00'),
         isRead: true
       },
       unreadCount: 0,
@@ -82,7 +83,7 @@ export default function UserChatsPage() {
       profilePicture: 'https://i.pravatar.cc/40?img=5',
       lastMessage: {
         content: 'Can you send me that link again?',
-        timestamp: new Date('2024-01-15T10:30:00'),
+        timestamp: new Date('2025-10-30T09:30:00'),
         isRead: false
       },
       unreadCount: 1,
@@ -103,65 +104,58 @@ export default function UserChatsPage() {
   const totalUnreadCount = chats.reduce((sum, chat) => sum + chat.unreadCount, 0);
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-2xl mx-auto bg-white shadow-sm">
+    <div className="chatsContainer">
+      <div className="chatsWrapper">
         {/* Header */}
-        <div className="border-b border-gray-200 p-4">
-          <div className="flex items-center justify-between">
-            <h1 className="text-xl font-semibold text-gray-900">
+        <div className="chatsHeader">
+          <div className="chatsHeaderInner">
+            <h1>
               Messages
             </h1>
-            {totalUnreadCount > 0 && (
-              <div className="bg-red-500 text-white text-xs font-medium px-2 py-1 rounded-full">
-                {totalUnreadCount}
-              </div>
-            )}
           </div>
         </div>
 
         {/* Chats List */}
-        <div className="divide-y divide-gray-200">
+        <div className="chatsList">
           {chats.length === 0 ? (
-            <div className="p-8 text-center text-gray-500">
+            <div className="emptyState">
               <p>No conversations yet</p>
-              <p className="text-sm mt-1">Start a conversation with someone!</p>
+              <p className="emptyStateText">Start a conversation with someone!</p>
             </div>
           ) : (
             chats.map((chat) => (
               <Link
                 key={chat.id}
                 href={`/user/${userNickname}/chats/${chat.userId}` as any}
-                className="block p-4 hover:bg-gray-50 transition-colors"
+                className={`chatLink ${chat.unreadCount > 0 ? 'chatLinkUnread' : ''}`}
               >
-                <div className="flex items-center gap-3">
-                  <div className="relative flex-shrink-0">
+                <div className="chatItem">
+                  {chat.unreadCount > 0 && (
+                    <div className="unreadBadge">
+                      {chat.unreadCount}
+                    </div>
+                  )}
+                  <div className="avatarContainer">
                     <img
                       src={chat.profilePicture}
                       alt={chat.username}
-                      className="h-12 w-12 rounded-full object-cover"
+                      className="avatar"
                     />
                     {chat.isOnline && (
-                      <div className="absolute bottom-0 right-0 h-3 w-3 bg-green-500 border-2 border-white rounded-full"></div>
+                      <div className="onlineIndicator"></div>
                     )}
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between">
-                      <h3 className="text-sm font-medium text-gray-900 truncate">
+                  <div className="chatInfo">
+                    <div className="chatHeader">
+                      <h3 className="username">
                         {chat.username}
                       </h3>
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs text-gray-500">
-                          {formatTime(chat.lastMessage.timestamp)}
-                        </span>
-                        {chat.unreadCount > 0 && (
-                          <div className="bg-blue-500 text-white text-xs font-medium px-2 py-1 rounded-full min-w-[20px] text-center">
-                            {chat.unreadCount}
-                          </div>
-                        )}
-                      </div>
+                      <span className="timeText">
+                        {formatTime(chat.lastMessage.timestamp)}
+                      </span>
                     </div>
-                    <p className={`text-sm mt-1 truncate ${
-                      chat.unreadCount > 0 ? 'text-gray-900 font-medium' : 'text-gray-500'
+                    <p className={`messageContent ${
+                      chat.unreadCount > 0 ? 'messageContentUnread' : 'messageContentRead'
                     }`}>
                       {chat.lastMessage.content}
                     </p>

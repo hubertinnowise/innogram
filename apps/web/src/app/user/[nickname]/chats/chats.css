@@ -1,0 +1,161 @@
+.chatsContainer {
+    display: flex;
+    justify-content: center;
+}
+
+.chatsWrapper {
+    width: 50vw;
+    background-color: white;
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+}
+
+.chatsHeader {
+    border-bottom: 1px solid #e5e7eb;
+    padding: 16px 16px 0 0;
+}
+
+.chatsHeaderInner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.chatsHeaderInner h1 {
+    font-size: 24px;
+    font-weight: bold;
+    margin-bottom: 16px;
+}
+
+.chatsList > *:not(:first-child) {
+    border-top: 1px solid #e5e7eb;
+}
+
+.emptyState {
+    padding: 32px;
+    text-align: center;
+    color: #6b7280;
+}
+
+.emptyStateText {
+    font-size: 14px;
+    margin-top: 4px;
+}
+
+.chatLink {
+    display: block;
+    padding: 16px;
+    transition: background-color 0.2s;
+    text-decoration: none;
+    color: inherit;
+}
+
+.chatLink:hover {
+    background-color: #f9fafb;
+}
+
+.chatLinkUnread {
+    background-color: #fef2f2;
+}
+
+.chatLinkUnread:hover {
+    background-color: #fee2e2;
+}
+
+.chatItem {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    position: relative;
+}
+
+.chatItem::before {
+    content: '';
+    width: 20px;
+    flex-shrink: 0;
+}
+
+.avatarContainer {
+    position: relative;
+    flex-shrink: 0;
+}
+
+.avatar {
+    height: 48px;
+    width: 48px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.onlineIndicator {
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    height: 12px;
+    width: 12px;
+    background-color: #10b981;
+    border: 2px solid white;
+    border-radius: 50%;
+}
+
+.chatInfo {
+    flex: 1;
+    min-width: 0;
+}
+
+.chatHeader {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.username {
+    font-size: 14px;
+    font-weight: 500;
+    color: #111827;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    flex: 1;
+    min-width: 0;
+}
+
+.timeText {
+    font-size: 12px;
+    color: #6b7280;
+    flex-shrink: 0;
+}
+
+.unreadBadge {
+    background-color: #dc2626;
+    color: white;
+    font-size: 10px;
+    font-weight: 500;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    position: absolute;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+.messageContent {
+    font-size: 14px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.messageContentUnread {
+    color: #111827;
+    font-weight: 500;
+}
+
+.messageContentRead {
+    color: #6b7280;
+}

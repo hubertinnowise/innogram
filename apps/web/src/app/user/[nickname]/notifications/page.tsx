@@ -2,6 +2,8 @@
 
 import { useParams } from 'next/navigation';
 import { useState } from 'react';
+import { HeartIcon, ChatBubbleLeftIcon, UserPlusIcon, AtSymbolIcon } from '@heroicons/react/24/solid';
+import './notifications.css';
 
 interface Notification {
   id: string;
@@ -29,7 +31,7 @@ export default function UserNotificationsPage() {
         profilePicture: 'https://i.pravatar.cc/40?img=1'
       },
       content: 'liked your post',
-      timestamp: new Date('2024-01-15T14:30:00'),
+      timestamp: new Date('2025-11-06T10:30:00'),
       isRead: false,
       postId: 'post123'
     },
@@ -41,7 +43,7 @@ export default function UserNotificationsPage() {
         profilePicture: 'https://i.pravatar.cc/40?img=2'
       },
       content: 'commented on your post: "Great shot!"',
-      timestamp: new Date('2024-01-15T13:45:00'),
+      timestamp: new Date('2025-11-05T16:45:00'),
       isRead: false,
       postId: 'post456'
     },
@@ -53,22 +55,10 @@ export default function UserNotificationsPage() {
         profilePicture: 'https://i.pravatar.cc/40?img=3'
       },
       content: 'started following you',
-      timestamp: new Date('2024-01-15T12:20:00'),
+      timestamp: new Date('2025-11-04T14:20:00'),
       isRead: true,
       postId: undefined
     },
-    {
-      id: '4',
-      type: 'mention',
-      fromUser: {
-        username: 'diana_prince',
-        profilePicture: 'https://i.pravatar.cc/40?img=4'
-      },
-      content: 'mentioned you in a post',
-      timestamp: new Date('2024-01-15T11:15:00'),
-      isRead: true,
-      postId: 'post789'
-    }
   ]);
 
   const markAsRead = (notificationId: string) => {
@@ -90,15 +80,15 @@ export default function UserNotificationsPage() {
   const getNotificationIcon = (type: string) => {
     switch (type) {
       case 'like':
-        return '❤️';
+        return <HeartIcon className="notificationIconSvg notificationIconLike" />;
       case 'comment':
-        return '💬';
+        return <ChatBubbleLeftIcon className="notificationIconSvg notificationIconComment" />;
       case 'follow':
-        return '👤';
+        return <UserPlusIcon className="notificationIconSvg notificationIconFollow" />;
       case 'mention':
-        return '📝';
+        return <AtSymbolIcon className="notificationIconSvg" />;
       default:
-        return '🔔';
+        return null;
     }
   };
 
@@ -107,26 +97,26 @@ export default function UserNotificationsPage() {
     const diffInMinutes = Math.floor((now.getTime() - date.getTime()) / (1000 * 60));
     
     if (diffInMinutes < 1) return 'Just now';
-    if (diffInMinutes < 60) return `${diffInMinutes}m ago`;
-    if (diffInMinutes < 1440) return `${Math.floor(diffInMinutes / 60)}h ago`;
-    return `${Math.floor(diffInMinutes / 1440)}d ago`;
+    if (diffInMinutes < 60) return `${diffInMinutes}m`;
+    if (diffInMinutes < 1440) return `${Math.floor(diffInMinutes / 60)}h`;
+    return `${Math.floor(diffInMinutes / 1440)}d`;
   };
 
   const unreadCount = notifications.filter(n => !n.isRead).length;
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-2xl mx-auto bg-white shadow-sm">
+    <div className="notificationsContainer">
+      <div className="notificationsWrapper">
         {/* Header */}
-        <div className="border-b border-gray-200 p-4">
-          <div className="flex items-center justify-between">
-            <h1 className="text-xl font-semibold text-gray-900">
+        <div className="notificationsHeader">
+          <div className="notificationsHeaderInner">
+            <h1>
               Notifications
             </h1>
             {unreadCount > 0 && (
               <button
                 onClick={markAllAsRead}
-                className="text-sm text-blue-600 hover:text-blue-800 font-medium"
+                className="markAllReadButton"
               >
                 Mark all as read
               </button>
@@ -135,49 +125,47 @@ export default function UserNotificationsPage() {
         </div>
 
         {/* Notifications List */}
-        <div className="divide-y divide-gray-200">
+        <div className="notificationsList">
           {notifications.length === 0 ? (
-            <div className="p-8 text-center text-gray-500">
+            <div className="emptyState">
               <p>No notifications yet</p>
             </div>
           ) : (
             notifications.map((notification) => (
               <div
                 key={notification.id}
-                className={`p-4 hover:bg-gray-50 cursor-pointer transition-colors ${
-                  !notification.isRead ? 'bg-blue-50' : ''
+                className={`notificationItem ${
+                  !notification.isRead ? 'notificationItemUnread' : ''
                 }`}
                 onClick={() => markAsRead(notification.id)}
               >
-                <div className="flex items-start gap-3">
-                  <div className="flex-shrink-0">
+                <div className="notificationContent">
+                  {!notification.isRead && (
+                    <div className="unreadIndicator"></div>
+                  )}
+                  <div className="avatarContainer">
                     <img
                       src={notification.fromUser.profilePicture}
                       alt={notification.fromUser.username}
-                      className="h-10 w-10 rounded-full object-cover"
+                      className="avatar"
                     />
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <span className="text-lg">
-                        {getNotificationIcon(notification.type)}
-                      </span>
-                      <p className="text-sm text-gray-900">
-                        <span className="font-medium">
+                  <div className="notificationInfo">
+                    <div className="notificationTextRow">
+                      <p className="notificationText">
+                        <span className="notificationUsername">
                           {notification.fromUser.username}
                         </span>{' '}
                         {notification.content}
                       </p>
+                      <span className="notificationIcon">
+                        {getNotificationIcon(notification.type)}
+                      </span>
+                      <span className="notificationTime">
+                        {formatTime(notification.timestamp)}
+                      </span>
                     </div>
-                    <p className="text-xs text-gray-500 mt-1">
-                      {formatTime(notification.timestamp)}
-                    </p>
                   </div>
-                  {!notification.isRead && (
-                    <div className="flex-shrink-0">
-                      <div className="h-2 w-2 bg-blue-500 rounded-full"></div>
-                    </div>
-                  )}
                 </div>
               </div>
             ))
