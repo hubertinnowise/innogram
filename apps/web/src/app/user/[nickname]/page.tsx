@@ -31,10 +31,20 @@ export default function UserPage({ params }: UserPageProps) {
 
                 <div className="user-details">
                     <h2>Username</h2>
-                    <div>
+                    <div className="user-stats">
                         <p>Posts: 7</p>
-                        <p>Followers: 100</p>
-                        <p>Following: 100</p>
+                        <Link
+                            href={`/user/${nickname}/connections?view=followers` as any}
+                            className="user-stat-link"
+                        >
+                            Followers: 100
+                        </Link>
+                        <Link
+                            href={`/user/${nickname}/connections?view=followees` as any}
+                            className="user-stat-link"
+                        >
+                            Following: 100
+                        </Link>
                     </div>
                 </div>
 

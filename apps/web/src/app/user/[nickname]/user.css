@@ -43,6 +43,27 @@
     justify-content: space-between;
 }
 
+.user-stats {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+.user-stat-link {
+    text-decoration: none;
+    color: #111827;
+    background-color: #fff;
+    padding: 6px 16px;
+    border-radius: 12px;
+    transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.user-stat-link:hover,
+.user-stat-link:focus-visible {
+    color: #dc2626;
+    background-color: #fee2e2;
+}
+
 .user-actions {
     display: flex;
     width: 100%;
